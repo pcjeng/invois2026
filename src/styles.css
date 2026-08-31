@@ -221,6 +221,33 @@ input, select, textarea { font-family: inherit; font-size: 15px; color: var(--te
 .login-card .btn { width: 100%; margin-top: 16px; padding: 12px; font-size: 15px; }
 .login-err { background: #FFEBEE; color: #B71C1C; border-radius: 8px; padding: 8px 10px; font-size: 13px; margin-top: 10px; }
 .login-note { color: var(--muted); font-size: 12px; text-align: center; margin: 14px 0 0; }
+.login-info { background: #E8F5E9; color: #2E7D32; border-radius: 8px; padding: 8px 10px; font-size: 13px; margin-top: 10px; }
+.login-links { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.linklike { background: none; border: none; color: var(--navy); font-size: 13px; cursor: pointer; padding: 0; }
+.linklike b { text-decoration: underline; }
+.upload-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.upload-hint { font-size: 12px; color: var(--muted); }
+.upload-ok { font-size: 12px; color: var(--ok); }
+.file-btn { font-size: 12px; }
+
+/* ---------- ADMIN ---------- */
+.admin-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 14px; }
+.admin-stat {
+  background: #fff; border-radius: 12px; box-shadow: var(--shadow);
+  padding: 14px 8px; text-align: center; font-size: 12px; color: var(--muted);
+}
+.admin-stat b { display: block; font-size: 22px; color: var(--navy); margin-bottom: 2px; }
+.admin-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.admin-table th {
+  text-align: left; padding: 10px 12px; border-bottom: 2px solid var(--line);
+  font-size: 11px; text-transform: uppercase; color: var(--muted); white-space: nowrap;
+}
+.admin-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.role-chip {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  border-radius: 999px; padding: 2px 9px; background: #E8F5E9; color: #2E7D32;
+}
+.role-chip.user { background: #EEEEEE; color: var(--muted); }
 .header-user { margin-left: auto; display: flex; align-items: center; gap: 8px; }
 .header-user .email {
   font-size: 12px; opacity: 0.85; max-width: 160px;

@@ -62,6 +62,21 @@ export async function onAuthStateChange(cb) {
   return b.onAuthStateChange(cb)
 }
 
+// ---------- Peranan / Admin ----------
+export async function getMyRole() {
+  if (!usingSupabase) return 'user'
+  return (await getBackend()).getMyRole()
+}
+export async function adminListUsers() {
+  return (await getBackend()).adminListUsers()
+}
+export async function adminSetRole(target, newRole) {
+  return (await getBackend()).adminSetRole(target, newRole)
+}
+export async function adminSetBanned(target, banned) {
+  return (await getBackend()).adminSetBanned(target, banned)
+}
+
 export function emptyDocument(typeId = 'quote') {
   return {
     id: null,

@@ -174,3 +174,9 @@ export async function setPdfUrl(id, url) {
     write(KEYS.docs, list)
   }
 }
+
+// ---------- Auth / Admin (demo mode: tiada auth sebenar) ----------
+export async function getMyRole() { return 'user' }
+export async function adminListUsers() { throw new Error('Admin hanya tersedia dalam mod Supabase') }
+export async function adminSetRole() { throw new Error('Admin hanya tersedia dalam mod Supabase') }
+export async function adminSetBanned() { throw new Error('Admin hanya tersedia dalam mod Supabase') }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { usingSupabase, getSession, signOut, onAuthStateChange } from '../lib/db'
+import { usingSupabase, getSession, signOut, onAuthStateChange, getMyRole } from '../lib/db'
 
 const TITLES = [
   { re: /^\/$/, title: 'Documents' },
@@ -15,6 +15,7 @@ export default function Layout({ children }) {
   const location = useLocation()
   const [banner, setBanner] = useState(true)
   const [userEmail, setUserEmail] = useState('')
+  const [role, setRole] = useState('user')
   const title = (TITLES.find((t) => t.re.test(location.pathname)) || {}).title || 'Invois App'
 
   useEffect(() => {
@@ -23,7 +24,11 @@ export default function Layout({ children }) {
     getSession()
       .then((s) => setUserEmail(s?.user?.email || ''))
       .catch(() => {})
-    onAuthStateChange((_e, s) => setUserEmail(s?.user?.email || '')).catch(() => {})
+    getMyRole().then(setRole).catch(() => {})
+    onAuthStateChange((_e, s) => {
+      setUserEmail(s?.user?.email || '')
+      setRole(s?.user?.app_metadata?.role || 'user')
+    }).catch(() => {})
     return () => unsub()
   }, [])
 
@@ -64,6 +69,7 @@ export default function Layout({ children }) {
       <nav className="bottom-nav no-print">
         <NavLink to="/" end><span className="ico">📄</span>Documents</NavLink>
         <NavLink to="/customers"><span className="ico">👥</span>Customers</NavLink>
+        {role === 'admin' && <NavLink to="/admin"><span className="ico">🛡️</span>Admin</NavLink>}
         <NavLink to="/settings"><span className="ico">⚙️</span>Settings</NavLink>
       </nav>
     </>

@@ -129,6 +129,18 @@ Aplikasi ada **skrin log masuk + daftar akaun** (mod SaaS):
 > kod frontend (standard untuk upload client-side). Had free tier Cloudinary:
 > 25 kredit bulanan (≈25GB bandwidth/5GB storan) — cukup untuk permulaan.
 
+## 6. Sistem Peranan — Admin vs User
+
+- Semua akaun baru = **USER** biasa (data sendiri sahaja).
+- Peranan disimpan dalam Supabase Auth (`app_metadata.role`) dan hanya boleh
+  ditukar melalui SQL/dashboard — pengguna biasa tak boleh promote diri.
+- **Jadikan diri anda admin**: run fail `supabase/schema-admin.sql` — ikut
+  LANGKAH 1 dalam fail itu (ganti `EMAIL_ANDA`, run baris `update`), kemudian
+  run keseluruhan fail untuk fungsi admin. Lepas log keluar & log masuk
+  semula, menu **🛡️ Admin** akan muncul di navigation bar bawah.
+- Panel Admin: senarai pengguna, bilangan dokumen, jadikan admin/user,
+  ban/unban pengguna.
+
 ## Struktur projek
 
 ```
@@ -142,6 +154,7 @@ invois-app/
 │   ├── schema.sql          # skema asas + RLS
 │   ├── schema-auth.sql     # kunci data untuk login (versi admin tunggal)
 │   └── schema-saas.sql     # SaaS: user_id + polisi per-pengguna + pdf_url
+│   └── schema-admin.sql    # peranan admin/user + fungsi RPC admin
 └── src/
     ├── main.jsx            # entry + HashRouter
     ├── App.jsx             # routes
@@ -162,7 +175,8 @@ invois-app/
     └── pages/
         ├── Dashboard.jsx   # senarai dokumen + tapisan + carian
         ├── Editor.jsx      # borang dokumen (ikut rujukan)
-        ├── PrintView.jsx   # paparan cetak A4 / PDF
+        ├── PrintView.jsx   # paparan cetak A4 / PDF + simpan PDF ke Cloud
         ├── Customers.jsx   # CRUD customer
-        └── Settings.jsx    # profil syarikat + saved items
+        ├── Settings.jsx    # profil, Cloudinary upload, tukar kata laluan
+        └── Admin.jsx       # panel admin (urus pengguna & peranan)
 ```

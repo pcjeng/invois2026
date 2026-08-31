@@ -6,6 +6,7 @@ import Editor from './pages/Editor'
 import PrintView from './pages/PrintView'
 import Customers from './pages/Customers'
 import Settings from './pages/Settings'
+import Admin from './pages/Admin'
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
                 <Route path="/new" element={<Editor />} />
                 <Route path="/doc/:id" element={<Editor />} />
                 <Route path="/customers" element={<Customers />} />
+                <Route path="/admin" element={<Admin />} />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
             </Layout>

@@ -58,6 +58,29 @@ export function onAuthStateChange(cb) {
   return () => data.subscription.unsubscribe()
 }
 
+// Peranan pengguna semasa ('admin' | 'user') dari app_metadata JWT
+export async function getMyRole() {
+  const { data } = await client.auth.getSession()
+  return data.session?.user?.app_metadata?.role || 'user'
+}
+
+// ---------- RPC Admin (fungsi security definer di Supabase) ----------
+export async function adminListUsers() {
+  const { data, error } = await client.rpc('admin_list_users')
+  if (error) throw error
+  return data || []
+}
+
+export async function adminSetRole(target, newRole) {
+  const { error } = await client.rpc('admin_set_role', { target, new_role: newRole })
+  if (error) throw error
+}
+
+export async function adminSetBanned(target, banned) {
+  const { error } = await client.rpc('admin_set_banned', { target, banned })
+  if (error) throw error
+}
+
 // ---------- company profile (satu baris setiap pengguna) ----------
 export async function getProfile() {
   const u = await uid()
