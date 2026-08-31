@@ -24,18 +24,54 @@ body {
 button { font-family: inherit; }
 input, select, textarea { font-family: inherit; font-size: 15px; color: var(--text); }
 
-/* ---------- Header ---------- */
+/* ---------- Header (tema putih-biru ikut dashboard rujukan) ---------- */
 .app-header {
   position: sticky; top: 0; z-index: 20;
-  background: var(--navy); color: #fff;
+  background: #fff; color: #00AEEF;
   height: 56px; display: flex; align-items: center; gap: 8px;
   padding: 0 12px;
+  border-bottom: 1px solid var(--line);
 }
 .app-header .back-btn {
-  background: none; border: none; color: #fff; font-size: 22px;
+  background: none; border: none; color: #00AEEF; font-size: 22px;
   cursor: pointer; padding: 4px 10px;
 }
-.app-header h1 { font-size: 18px; font-weight: 600; margin: 0; }
+.app-header .menu-btn {
+  background: none; border: none; color: #00AEEF; font-size: 24px;
+  cursor: pointer; padding: 4px 10px;
+}
+.app-header h1 {
+  font-size: 17px; font-weight: 700; margin: 0; flex: 1;
+  text-align: center; letter-spacing: 1px;
+  color: #00AEEF;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.header-user { margin-left: auto; display: flex; align-items: center; gap: 8px; flex: none; }
+.header-user .email {
+  font-size: 12px; color: #666; max-width: 140px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.header-user button {
+  background: #00AEEF; border: none; color: #fff; font-weight: 700;
+  border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 12px;
+}
+
+/* ---------- Drawer menu ---------- */
+.drawer-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.4); z-index: 60; }
+.drawer {
+  position: fixed; top: 0; bottom: 0; left: 0; width: 260px; z-index: 61;
+  background: #fff; padding: 22px 16px; box-shadow: 4px 0 20px rgba(0, 0, 0, 0.2);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.drawer-brand { color: #00AEEF; font-weight: 800; font-size: 18px; letter-spacing: 1px; }
+.drawer-user { color: var(--muted); font-size: 12px; margin-bottom: 14px; word-break: break-all; }
+.drawer-link {
+  text-align: left; background: none; border: none; padding: 11px 10px;
+  border-radius: 8px; font-size: 15px; cursor: pointer; color: var(--text);
+}
+.drawer-link:hover { background: #F0F9FF; }
+.drawer-link.danger { color: var(--danger); }
+.drawer-sep { height: 1px; background: var(--line); margin: 8px 0; }
 
 .page {
   max-width: 640px; margin: 0 auto;
@@ -157,18 +193,81 @@ input, select, textarea { font-family: inherit; font-size: 15px; color: var(--te
 .t-row.grand { font-size: 18px; font-weight: 800; border-bottom: none; padding: 12px 0 8px; }
 .t-row.grand span:last-child { color: var(--navy); }
 
-/* ---------- Bottom nav ---------- */
+/* ---------- Bottom nav (warna aktif ikut tab rujukan) ---------- */
 .bottom-nav {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 20;
   background: #fff; border-top: 1px solid var(--line);
   display: flex; justify-content: center;
 }
 .bottom-nav a {
-  flex: 1; max-width: 213px; text-align: center; padding: 10px 0 12px;
+  flex: 1; max-width: 200px; text-align: center; padding: 10px 0 12px;
   text-decoration: none; color: var(--muted); font-size: 12px;
 }
 .bottom-nav a .ico { font-size: 20px; display: block; }
-.bottom-nav a.active { color: var(--navy); font-weight: 700; }
+.bottom-nav a.nav-docs.active { color: #D2691E; font-weight: 700; }
+.bottom-nav a.nav-cust.active { color: #43A047; font-weight: 700; }
+.bottom-nav a.nav-admin.active { color: #E53935; font-weight: 700; }
+.bottom-nav a.nav-set.active { color: #00AEEF; font-weight: 700; }
+
+/* ---------- Dashboard (gaya RAZZAQU) ---------- */
+.dash-section { margin-bottom: 16px; }
+.dash-section-h {
+  background: #00AEEF; color: #fff;
+  font-weight: 700; text-transform: uppercase; font-size: 14px;
+  padding: 12px 14px; border-radius: 10px 10px 0 0;
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+}
+.year-select {
+  border: none; border-radius: 8px; padding: 4px 8px; font-size: 13px;
+  background: #fff; color: var(--text); cursor: pointer;
+}
+.dash-section-body {
+  background: #fff; border-radius: 0 0 10px 10px;
+  box-shadow: var(--shadow); overflow: hidden;
+}
+.month-scroll {
+  display: flex; gap: 10px; overflow-x: auto; padding: 12px;
+}
+.month-card {
+  min-width: 150px; border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px; text-align: center; flex: none;
+}
+.month-card .m-label { font-weight: 700; margin-bottom: 8px; }
+.m-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.m-box { border-radius: 10px; color: #fff; padding: 10px 4px; font-weight: 700; display: flex; flex-direction: column; }
+.m-box small { font-weight: 400; opacity: 0.9; font-size: 10px; }
+.m-box.red { background: #EF5350; }
+.m-box.green { background: #43A047; }
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; }
+.stat-card {
+  border: 2px solid #00BFF0; border-radius: 12px; background: #fff;
+  padding: 10px 12px; display: flex; gap: 10px; align-items: center;
+  cursor: pointer; text-align: left; font-family: inherit;
+}
+.stat-card.dim { border-color: var(--line); opacity: 0.75; cursor: default; }
+.stat-card .ico { font-size: 26px; flex: none; }
+.stat-main { display: flex; flex-direction: column; min-width: 0; }
+.stat-count { font-size: 12px; color: var(--muted); }
+.stat-value { font-size: 16px; font-weight: 800; color: var(--text); }
+.stat-label { font-size: 13px; color: var(--text); }
+.overdue-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; border-bottom: 1px solid var(--line); cursor: pointer;
+}
+.overdue-row:last-child { border-bottom: none; }
+.overdue-row:hover { background: #F0F9FF; }
+.overdue-name { font-weight: 700; }
+.overdue-sub { color: var(--muted); font-size: 13px; }
+.overdue-sub b { color: var(--text); }
+.overdue-ico { font-size: 20px; }
+.fab-blue {
+  position: fixed; bottom: 76px; left: 50%; transform: translateX(-50%);
+  width: 56px; height: 56px; border-radius: 50%;
+  background: #03A9F4; color: #fff; border: none;
+  font-size: 26px; line-height: 1; cursor: pointer; z-index: 30;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+.fab-blue:active { transform: translateX(-50%) scale(0.95); }
 
 /* ---------- Modal ---------- */
 .modal-overlay {
