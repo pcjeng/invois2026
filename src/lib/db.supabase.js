@@ -189,3 +189,25 @@ export async function setArchived(id, archived) {
     .eq('id', id)
   if (error) throw error
 }
+
+// ---------- Auth (Supabase Auth) ----------
+export async function getSession() {
+  const { data, error } = await client.auth.getSession()
+  if (error) throw error
+  return data.session
+}
+
+export async function signIn(email, password) {
+  const { error } = await client.auth.signInWithPassword({ email, password })
+  if (error) throw error
+}
+
+export async function signOut() {
+  const { error } = await client.auth.signOut()
+  if (error) throw error
+}
+
+export function onAuthStateChange(cb) {
+  const { data } = client.auth.onAuthStateChange((evt, session) => cb(evt, session))
+  return () => data.subscription.unsubscribe()
+}

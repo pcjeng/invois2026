@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { usingSupabase } from '../lib/db'
+import { usingSupabase, getSession, signOut, onAuthStateChange } from '../lib/db'
 
 const TITLES = [
   { re: /^\/$/, title: 'Documents' },
@@ -14,7 +14,24 @@ export default function Layout({ children }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [banner, setBanner] = useState(true)
+  const [userEmail, setUserEmail] = useState('')
   const title = (TITLES.find((t) => t.re.test(location.pathname)) || {}).title || 'Invois App'
+
+  useEffect(() => {
+    if (!usingSupabase) return
+    let unsub = () => {}
+    getSession()
+      .then((s) => setUserEmail(s?.user?.email || ''))
+      .catch(() => {})
+    onAuthStateChange((_e, s) => setUserEmail(s?.user?.email || '')).catch(() => {})
+    return () => unsub()
+  }, [])
+
+  async function handleLogout() {
+    try {
+      await signOut()
+    } catch { /* abaikan */ }
+  }
 
   return (
     <>
@@ -27,6 +44,12 @@ export default function Layout({ children }) {
           ←
         </button>
         <h1>{title}</h1>
+        {usingSupabase && userEmail && (
+          <div className="header-user">
+            <span className="email" title={userEmail}>{userEmail}</span>
+            <button onClick={handleLogout}>Log Keluar</button>
+          </div>
+        )}
       </header>
 
       {!usingSupabase && banner && (

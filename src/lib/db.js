@@ -1,4 +1,3 @@
-// Lapisan data utama. Pilih backend Supabase jika env ada, jika tidak localStorage (demo mode).
 import { todayISO } from './format'
 import * as local from './db.local'
 
@@ -8,6 +7,7 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const usingSupabase = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)
+export const authAvailable = usingSupabase
 
 let supaPromise = null
 function getBackend() {
@@ -33,6 +33,23 @@ export async function getDocument(id) { return (await getBackend()).getDocument(
 export async function saveDocument(doc) { return (await getBackend()).saveDocument(doc) }
 export async function deleteDocument(id) { return (await getBackend()).deleteDocument(id) }
 export async function setArchived(id, archived) { return (await getBackend()).setArchived(id, archived) }
+
+// ---------- Auth (Supabase sahaja; demo mode tiada login) ----------
+export async function getSession() {
+  if (!usingSupabase) return null
+  return (await getBackend()).getSession()
+}
+export async function signIn(email, password) {
+  return (await getBackend()).signIn(email, password)
+}
+export async function signOut() {
+  return (await getBackend()).signOut()
+}
+export async function onAuthStateChange(cb) {
+  if (!usingSupabase) return () => {}
+  const b = await getBackend()
+  return b.onAuthStateChange(cb)
+}
 
 export function emptyDocument(typeId = 'quote') {
   return {

@@ -79,6 +79,24 @@ Kemudian di GitHub:
 > build kustom). Untuk penggunaan harian, `npm run dev` di komputer sendiri
 > dengan `.env` adalah cara paling mudah.
 
+## 4. Login Admin (Supabase Auth) — lindungi data awak
+
+Aplikasi dah ada **skrin log masuk**. Untuk kunci data supaya hanya admin boleh
+nampak, ikut langkah ni mengikut urusan:
+
+1. **Tunggu deployment siap** (GitHub Actions lulus / Vercel siap rebuild).
+2. Supabase → **SQL Editor** → run keseluruhan fail `supabase/schema-auth.sql`
+   — ini membuang akses awam dan hadkan data kepada admin yang login sahaja.
+3. Buat akaun admin: Supabase → **Authentication → Users → Add user →
+   Create new user** → masukkan email + kata laluan awak → tick
+   **Auto Confirm User** → Save.
+4. (Digalakkan) Supabase → **Authentication → Sign In / Providers → Email** →
+   matikan **Enable Sign Up** supaya orang lain tak boleh daftar sendiri.
+5. Buka aplikasi → log masuk dengan email + kata laluan admin tadi.
+
+> Selepas langkah 2, sesiapa tanpa akaun admin takkan nampak apa-apa data —
+> walaupun ada URL & anon key. Jangan kongsi kata laluan admin.
+
 ## Struktur projek
 
 ```
@@ -89,7 +107,8 @@ invois-app/
 ├── .env.example            # contoh env Supabase
 ├── .github/workflows/deploy.yml  # auto-deploy ke GitHub Pages
 ├── supabase/
-│   └── schema.sql          # skema database + RLS (run dalam Supabase SQL Editor)
+│   ├── schema.sql          # skema database + RLS (run dalam Supabase SQL Editor)
+│   └── schema-auth.sql     # naik taraf keselamatan: kunci data untuk admin login
 └── src/
     ├── main.jsx            # entry + HashRouter
     ├── App.jsx             # routes
@@ -102,7 +121,8 @@ invois-app/
     │   ├── docTypes.js     # 12 jenis dokumen, prefix, status
     │   └── format.js       # format RM & tarikh
     ├── components/
-    │   ├── Layout.jsx      # header navy + bottom nav + banner demo
+    │   ├── Layout.jsx      # header navy + bottom nav + butang Log Keluar
+    │   ├── AuthGate.jsx    # gerbang login admin (Supabase Auth)
     │   ├── DocTypePicker.jsx
     │   └── ItemsEditor.jsx
     └── pages/
