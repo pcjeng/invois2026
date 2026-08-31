@@ -2,6 +2,7 @@
 // Setiap baris data dibawa user_id; RLS di Supabase mengasingkan data setiap pengguna.
 import { createClient } from '@supabase/supabase-js'
 import { computeTotals } from './calc'
+import { todayISO } from './format'
 
 const client = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -174,19 +175,29 @@ export async function deleteSavedItem(id) {
 }
 
 // ---------- documents ----------
-export async function nextDocNumber(typeId) {
+// Format no. dokumen: YYYYMMDD + turutan 5 digit (cth: 2026090100001).
+// Turutan dikira berasingan bagi setiap jenis dokumen + tarikh + pengguna.
+export async function nextDocNumber(typeId, issueDate) {
   const u = await uid()
   if (!u) throw new Error('Belum log masuk')
+  const d = issueDate || todayISO()
+  const ymd = String(d).slice(0, 10).split('-').join('')
   const { data, error } = await client
     .from('documents')
     .select('doc_number')
     .eq('doc_type', typeId)
     .eq('user_id', u)
-    .order('doc_number', { ascending: false })
-    .limit(1)
+    .eq('issue_date', d)
   if (error) throw error
-  const max = data && data.length ? num(data[0].doc_number) : 0
-  return Math.max(max + 1, 100)
+  let max = 0
+  for (const r of data || []) {
+    const s = String(r.doc_number || '')
+    if (s.startsWith(ymd)) {
+      const seq = parseInt(s.slice(-5), 10) || 0
+      if (seq > max) max = seq
+    }
+  }
+  return ymd + String(max + 1).padStart(5, '0')
 }
 
 export async function listDocuments(opts = {}) {

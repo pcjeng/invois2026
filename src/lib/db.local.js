@@ -1,6 +1,7 @@
 // Backend localStorage — demo mode bila Supabase belum dikonfigur.
 // Bentuk data sama dengan backend Supabase supaya aplikasi tak perlu tahu bezaannya.
 import { computeTotals } from './calc'
+import { todayISO } from './format'
 
 const PREFIX = 'invois_app_v1_'
 const KEYS = {
@@ -93,11 +94,19 @@ function cleanItems(items) {
     }))
 }
 
-export async function nextDocNumber(typeId) {
-  const max = read(KEYS.docs, [])
-    .filter((d) => d.doc_type === typeId)
-    .reduce((m, d) => Math.max(m, num(d.doc_number)), 0)
-  return Math.max(max + 1, 100)
+export async function nextDocNumber(typeId, issueDate) {
+  const d = String(issueDate || todayISO()).slice(0, 10)
+  const ymd = d.split('-').join('')
+  const list = read(KEYS.docs, []).filter((x) => x.doc_type === typeId && String(x.issue_date || '').slice(0, 10) === d)
+  let max = 0
+  for (const x of list) {
+    const s = String(x.doc_number || '')
+    if (s.startsWith(ymd)) {
+      const seq = parseInt(s.slice(-5), 10) || 0
+      if (seq > max) max = seq
+    }
+  }
+  return ymd + String(max + 1).padStart(5, '0')
 }
 
 export async function listDocuments(opts = {}) {

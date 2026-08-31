@@ -39,7 +39,7 @@ export default function Editor() {
         })
         .catch(() => setError('Dokumen tidak dijumpai.'))
     } else {
-      api.nextDocNumber('quote')
+      api.nextDocNumber('quote', '')
         .then((n) => setDoc((d) => (d.doc_number ? d : { ...d, doc_number: String(n) })))
         .catch(() => {})
     }
@@ -61,8 +61,19 @@ export default function Editor() {
     setDoc((d) => ({ ...d, doc_type: typeId, status: statusOptionsFor(typeId)[0] }))
     if (!id && !numberTouched) {
       try {
-        const n = await api.nextDocNumber(typeId)
+        const n = await api.nextDocNumber(typeId, doc.issue_date)
         setDoc((d) => (d.doc_type === typeId ? { ...d, doc_number: String(n) } : d))
+      } catch { /* abaikan */ }
+    }
+  }
+
+  // Nombor ikut tarikh dokumen (format YYYYMMDD + turutan) selagi tak diubah manual
+  async function changeIssueDate(v) {
+    setField('issue_date', v)
+    if (!id && !numberTouched && v) {
+      try {
+        const n = await api.nextDocNumber(doc.doc_type, v)
+        setDoc((d) => (numberTouched ? d : { ...d, doc_number: String(n) }))
       } catch { /* abaikan */ }
     }
   }
@@ -122,7 +133,7 @@ export default function Editor() {
         </label>
         <label className="row">
           <span>Issue Date</span>
-          <input type="date" value={doc.issue_date || ''} onChange={(e) => setField('issue_date', e.target.value)} />
+          <input type="date" value={doc.issue_date || ''} onChange={(e) => changeIssueDate(e.target.value)} />
         </label>
         {!type.isReceipt && (
           <label className="row">

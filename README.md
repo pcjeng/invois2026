@@ -6,7 +6,11 @@ mengikut aplikasi mobile rujukan (header navy, butang simpan emas, matawang **RM
 Ciri-ciri:
 - **12 jenis dokumen**: Invoice, Tax Invoice, Proforma Invoice, Receipt, Sales Receipt,
   Cash Receipt, Quote, Estimate, Credit Memo, Credit Note, Purchase Order, Delivery Note
-- Nombor dokumen **automatik** (mula 100, setiap jenis berasingan — cth: `QUO-100`)
+- Nombor dokumen **automatik ikut tarikh** — format `YYYYMMDD` + turutan
+  5 digit per jenis dokumen dan tarikh (cth: quote pertama pada 1/9/2026 =
+  `QUO-2026090100001`, quote kedua hari yang sama = `QUO-2026090100002`).
+  Nombor terjana semula automatik jika tarikh dokumen diubah (selagi tak
+  diedit manual). WAJIB run `supabase/schema-number.sql` sekali.
 - Data syarikat (From) & customer (Bill To) — customer boleh disimpan & dipilih semula
 - Item baris + **Subtotal / Discount / Tax % / TOTAL** (auto kira)
 - **Saved Items** — katalog produk untuk tambah item pantas

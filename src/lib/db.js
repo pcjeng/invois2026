@@ -20,7 +20,7 @@ function getBackend() {
   return Promise.resolve(local)
 }
 
-export async function nextDocNumber(typeId) { return (await getBackend()).nextDocNumber(typeId) }
+export async function nextDocNumber(typeId, issueDate) { return (await getBackend()).nextDocNumber(typeId, issueDate) }
 export async function getProfile() { return (await getBackend()).getProfile() }
 export async function saveProfile(p) { return (await getBackend()).saveProfile(p) }
 export async function listCustomers() { return (await getBackend()).listCustomers() }
