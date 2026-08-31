@@ -1,5 +1,5 @@
-// Backend Supabase (@supabase/supabase-js v2).
-// Digunakan secara automatik oleh db.js bila VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY ada.
+// Backend Supabase (@supabase/supabase-js v2) — versi SaaS multi-pengguna.
+// Setiap baris data dibawa user_id; RLS di Supabase mengasingkan data setiap pengguna.
 import { createClient } from '@supabase/supabase-js'
 import { computeTotals } from './calc'
 
@@ -13,14 +13,67 @@ function num(v) {
   return Number.isFinite(n) ? n : 0
 }
 
-// ---------- company profile ----------
+// ID pengguna yang sedang login (diperlukan untuk setiap tulisan)
+async function uid() {
+  const { data } = await client.auth.getSession()
+  return data.session?.user?.id || null
+}
+
+// ---------- Auth ----------
+export async function getSession() {
+  const { data, error } = await client.auth.getSession()
+  if (error) throw error
+  return data.session
+}
+
+export async function signIn(email, password) {
+  const { error } = await client.auth.signInWithPassword({ email, password })
+  if (error) throw error
+}
+
+// Balik { needsEmailConfirm } — kalau Supabase minta pengesahan email, session tak tercipta lagi
+export async function signUp(email, password) {
+  const { data, error } = await client.auth.signUp({ email, password })
+  if (error) throw error
+  return { needsEmailConfirm: !data.session }
+}
+
+export async function sendPasswordReset(email) {
+  const { error } = await client.auth.resetPasswordForEmail(email)
+  if (error) throw error
+}
+
+export async function updatePassword(password) {
+  const { error } = await client.auth.updateUser({ password })
+  if (error) throw error
+}
+
+export async function signOut() {
+  const { error } = await client.auth.signOut()
+  if (error) throw error
+}
+
+export function onAuthStateChange(cb) {
+  const { data } = client.auth.onAuthStateChange((evt, session) => cb(evt, session))
+  return () => data.subscription.unsubscribe()
+}
+
+// ---------- company profile (satu baris setiap pengguna) ----------
 export async function getProfile() {
-  const { data, error } = await client.from('company_profile').select('*').limit(1)
+  const u = await uid()
+  if (!u) return null
+  const { data, error } = await client
+    .from('company_profile')
+    .select('*')
+    .eq('user_id', u)
+    .limit(1)
   if (error) throw error
   return data && data.length ? data[0] : null
 }
 
 export async function saveProfile(p) {
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
   const row = {
     name: p.name || '',
     address: p.address || '',
@@ -36,26 +89,30 @@ export async function saveProfile(p) {
     if (error) throw error
     return data
   }
-  const { data, error } = await client.from('company_profile').insert(row).select().single()
+  const { data, error } = await client.from('company_profile').insert({ ...row, user_id: u }).select().single()
   if (error) throw error
   return data
 }
 
 // ---------- customers ----------
 export async function listCustomers() {
-  const { data, error } = await client.from('customers').select('*').order('name')
+  const u = await uid()
+  if (!u) return []
+  const { data, error } = await client.from('customers').select('*').eq('user_id', u).order('name')
   if (error) throw error
   return data || []
 }
 
 export async function saveCustomer(c) {
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
   const row = { name: c.name, address: c.address || '', phone: c.phone || '', email: c.email || '' }
   if (c.id) {
     const { data, error } = await client.from('customers').update(row).eq('id', c.id).select().single()
     if (error) throw error
     return data
   }
-  const { data, error } = await client.from('customers').insert(row).select().single()
+  const { data, error } = await client.from('customers').insert({ ...row, user_id: u }).select().single()
   if (error) throw error
   return data
 }
@@ -67,19 +124,23 @@ export async function deleteCustomer(id) {
 
 // ---------- saved items ----------
 export async function listSavedItems() {
-  const { data, error } = await client.from('saved_items').select('*').order('description')
+  const u = await uid()
+  if (!u) return []
+  const { data, error } = await client.from('saved_items').select('*').eq('user_id', u).order('description')
   if (error) throw error
   return data || []
 }
 
 export async function saveSavedItem(item) {
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
   const row = { description: item.description, unit: item.unit || '', unit_price: num(item.unit_price) }
   if (item.id) {
     const { data, error } = await client.from('saved_items').update(row).eq('id', item.id).select().single()
     if (error) throw error
     return data
   }
-  const { data, error } = await client.from('saved_items').insert(row).select().single()
+  const { data, error } = await client.from('saved_items').insert({ ...row, user_id: u }).select().single()
   if (error) throw error
   return data
 }
@@ -91,10 +152,13 @@ export async function deleteSavedItem(id) {
 
 // ---------- documents ----------
 export async function nextDocNumber(typeId) {
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
   const { data, error } = await client
     .from('documents')
     .select('doc_number')
     .eq('doc_type', typeId)
+    .eq('user_id', u)
     .order('doc_number', { ascending: false })
     .limit(1)
   if (error) throw error
@@ -103,7 +167,9 @@ export async function nextDocNumber(typeId) {
 }
 
 export async function listDocuments(opts = {}) {
-  let q = client.from('documents').select('*').order('created_at', { ascending: false })
+  const u = await uid()
+  if (!u) return []
+  let q = client.from('documents').select('*').eq('user_id', u).order('created_at', { ascending: false })
   if (opts.type) q = q.eq('doc_type', opts.type)
   if (!opts.includeArchived) q = q.eq('archived', false)
   const { data, error } = await q
@@ -112,18 +178,28 @@ export async function listDocuments(opts = {}) {
 }
 
 export async function getDocument(id) {
-  const { data: doc, error } = await client.from('documents').select('*').eq('id', id).single()
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
+  const { data: doc, error } = await client
+    .from('documents')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', u)
+    .single()
   if (error) throw error
   const { data: items, error: err2 } = await client
     .from('document_items')
     .select('*')
     .eq('document_id', id)
+    .eq('user_id', u)
     .order('position')
   if (err2) throw err2
   return { ...doc, items: items || [] }
 }
 
 export async function saveDocument(doc) {
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
   const items = (doc.items || []).filter((it) => String(it.description || '').trim() !== '')
   const totals = computeTotals(items, doc.discount, doc.tax_rate)
 
@@ -150,19 +226,19 @@ export async function saveDocument(doc) {
 
   let docId = doc.id
   if (docId) {
-    const { error } = await client.from('documents').update(row).eq('id', docId)
+    const { error } = await client.from('documents').update(row).eq('id', docId).eq('user_id', u)
     if (error) throw error
-    // items diganti penuh setiap kali simpan (skala peribadi — cukup mudah)
-    const { error: eDel } = await client.from('document_items').delete().eq('document_id', docId)
+    const { error: eDel } = await client.from('document_items').delete().eq('document_id', docId).eq('user_id', u)
     if (eDel) throw eDel
   } else {
-    const { data, error } = await client.from('documents').insert(row).select('id').single()
+    const { data, error } = await client.from('documents').insert({ ...row, user_id: u }).select('id').single()
     if (error) throw error
     docId = data.id
   }
 
   const rows = items.map((it, i) => ({
     document_id: docId,
+    user_id: u,
     position: i,
     description: it.description,
     quantity: num(it.quantity),
@@ -177,6 +253,17 @@ export async function saveDocument(doc) {
   return docId
 }
 
+export async function setPdfUrl(id, url) {
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
+  const { error } = await client
+    .from('documents')
+    .update({ pdf_url: url, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', u)
+  if (error) throw error
+}
+
 export async function deleteDocument(id) {
   const { error } = await client.from('documents').delete().eq('id', id)
   if (error) throw error
@@ -188,26 +275,4 @@ export async function setArchived(id, archived) {
     .update({ archived: !!archived, updated_at: new Date().toISOString() })
     .eq('id', id)
   if (error) throw error
-}
-
-// ---------- Auth (Supabase Auth) ----------
-export async function getSession() {
-  const { data, error } = await client.auth.getSession()
-  if (error) throw error
-  return data.session
-}
-
-export async function signIn(email, password) {
-  const { error } = await client.auth.signInWithPassword({ email, password })
-  if (error) throw error
-}
-
-export async function signOut() {
-  const { error } = await client.auth.signOut()
-  if (error) throw error
-}
-
-export function onAuthStateChange(cb) {
-  const { data } = client.auth.onAuthStateChange((evt, session) => cb(evt, session))
-  return () => data.subscription.unsubscribe()
 }

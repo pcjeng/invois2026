@@ -1,3 +1,4 @@
+// Lapisan data utama. Pilih backend Supabase jika env ada, jika tidak localStorage (demo mode).
 import { todayISO } from './format'
 import * as local from './db.local'
 
@@ -33,6 +34,7 @@ export async function getDocument(id) { return (await getBackend()).getDocument(
 export async function saveDocument(doc) { return (await getBackend()).saveDocument(doc) }
 export async function deleteDocument(id) { return (await getBackend()).deleteDocument(id) }
 export async function setArchived(id, archived) { return (await getBackend()).setArchived(id, archived) }
+export async function setPdfUrl(id, url) { return (await getBackend()).setPdfUrl(id, url) }
 
 // ---------- Auth (Supabase sahaja; demo mode tiada login) ----------
 export async function getSession() {
@@ -41,6 +43,15 @@ export async function getSession() {
 }
 export async function signIn(email, password) {
   return (await getBackend()).signIn(email, password)
+}
+export async function signUp(email, password) {
+  return (await getBackend()).signUp(email, password)
+}
+export async function sendPasswordReset(email) {
+  return (await getBackend()).sendPasswordReset(email)
+}
+export async function updatePassword(password) {
+  return (await getBackend()).updatePassword(password)
 }
 export async function signOut() {
   return (await getBackend()).signOut()

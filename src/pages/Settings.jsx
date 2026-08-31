@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as api from '../lib/db'
+import { uploadImage, isConfigured as cloudinaryReady } from '../lib/cloudinary'
 import { fmtMoney } from '../lib/format'
 
 const EMPTY_PROFILE = { name: '', address: '', phone: '', email: '', logo_url: '', signature_url: '', default_tax_rate: 0 }
@@ -12,10 +13,18 @@ export default function Settings() {
   const [editingItemId, setEditingItemId] = useState(null)
   const [msg, setMsg] = useState('')
   const [savedOk, setSavedOk] = useState(false)
+  const [accountEmail, setAccountEmail] = useState('')
+  const [uploading, setUploading] = useState(null) // 'logo_url' | 'signature_url' | null
+  const [uploadMsg, setUploadMsg] = useState('')
+  const [pwForm, setPwForm] = useState({ a: '', b: '' })
+  const [pwMsg, setPwMsg] = useState('')
+  const logoFileRef = useRef(null)
+  const sigFileRef = useRef(null)
 
   useEffect(() => {
     api.getProfile().then((p) => { if (p) setProfile({ ...EMPTY_PROFILE, ...p }) }).catch(() => {})
     loadItems()
+    api.getSession().then((s) => setAccountEmail(s?.user?.email || '')).catch(() => {})
   }, [])
 
   async function loadItems() {
@@ -36,6 +45,24 @@ export default function Settings() {
     }
   }
 
+  async function handleUpload(kind, e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(kind)
+    setUploadMsg('')
+    try {
+      const res = await uploadImage(file)
+      setP(kind, res.secure_url)
+      setUploadMsg('✓ ' + (kind === 'logo_url' ? 'Logo' : 'Signature') + ' di-upload ke Cloudinary — klik Save Profile')
+    } catch (ex) {
+      setUploadMsg('Upload gagal: ' + (ex?.message || ex))
+    }
+    setUploading(null)
+    // benar pilih fail yang sama semula
+    if (kind === 'logo_url' && logoFileRef.current) logoFileRef.current.value = ''
+    if (kind === 'signature_url' && sigFileRef.current) sigFileRef.current.value = ''
+  }
+
   async function saveItem(e) {
     e.preventDefault()
     if (!String(itemForm.description).trim()) { setMsg('Description diperlukan.'); return }
@@ -49,9 +76,26 @@ export default function Settings() {
     }
   }
 
+  async function changePw(e) {
+    e.preventDefault()
+    setPwMsg('')
+    if (pwForm.a.length < 6) { setPwMsg('Kata laluan sekurang-kurangnya 6 aksara.'); return }
+    if (pwForm.a !== pwForm.b) { setPwMsg('Kata laluan tidak sama.'); return }
+    try {
+      await api.updatePassword(pwForm.a)
+      setPwMsg('✓ Kata laluan berjaya ditukar.')
+      setPwForm({ a: '', b: '' })
+    } catch (ex) {
+      setPwMsg('Gagal: ' + (ex?.message || ex))
+    }
+  }
+
   return (
     <div className="page">
       {msg && <div className="alert">{msg}</div>}
+      {accountEmail && (
+        <div className="section-h">Akaun: {accountEmail}</div>
+      )}
 
       <div className="section-h">Company Profile (From)</div>
       <div className="card">
@@ -64,8 +108,42 @@ export default function Settings() {
                 <input placeholder="Phone" value={profile.phone || ''} onChange={(e) => setP('phone', e.target.value)} />
                 <input placeholder="Email" value={profile.email || ''} onChange={(e) => setP('email', e.target.value)} />
               </div>
-              <input placeholder="Logo URL (pautan imej)" value={profile.logo_url || ''} onChange={(e) => setP('logo_url', e.target.value)} />
-              <input placeholder="Signature URL (pautan imej)" value={profile.signature_url || ''} onChange={(e) => setP('signature_url', e.target.value)} />
+
+              <label style={{ fontSize: 13, fontWeight: 600, marginTop: 6 }}>Logo syarikat</label>
+              <div className="upload-row">
+                <input
+                  ref={logoFileRef}
+                  type="file"
+                  accept="image/*"
+                  className="file-btn"
+                  onChange={(e) => handleUpload('logo_url', e)}
+                  disabled={!cloudinaryReady || uploading === 'logo_url'}
+                />
+                {profile.logo_url && <img src={profile.logo_url} alt="logo" style={{ maxHeight: 40, maxWidth: 90, objectFit: 'contain' }} />}
+              </div>
+              <input placeholder="…atau tampal Logo URL" value={profile.logo_url || ''} onChange={(e) => setP('logo_url', e.target.value)} />
+
+              <label style={{ fontSize: 13, fontWeight: 600, marginTop: 6 }}>Signature</label>
+              <div className="upload-row">
+                <input
+                  ref={sigFileRef}
+                  type="file"
+                  accept="image/*"
+                  className="file-btn"
+                  onChange={(e) => handleUpload('signature_url', e)}
+                  disabled={!cloudinaryReady || uploading === 'signature_url'}
+                />
+                {profile.signature_url && <img src={profile.signature_url} alt="signature" style={{ maxHeight: 40, maxWidth: 120, objectFit: 'contain' }} />}
+              </div>
+              <input placeholder="…atau tampal Signature URL" value={profile.signature_url || ''} onChange={(e) => setP('signature_url', e.target.value)} />
+              {uploadMsg && <span className={uploadMsg.startsWith('✓') ? 'upload-ok' : 'alert'} style={{ display: 'inline-block' }}>{uploadMsg}</span>}
+              {!cloudinaryReady && (
+                <span className="upload-hint">
+                  Cloudinary belum dikonfigur — upload dimitikan. Boleh tampal URL imej terus, atau konfigur VITE_CLOUDINARY_* dalam .env (lihat README).
+                </span>
+              )}
+              {uploading && <span className="upload-hint">Sedang mengupload…</span>}
+
               <label style={{ fontSize: 13, color: 'var(--muted)' }}>
                 Default Tax %
                 <input
@@ -77,6 +155,24 @@ export default function Settings() {
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button className="btn gold" type="submit">Save Profile</button>
                 {savedOk && <span style={{ color: 'var(--ok)', fontSize: 13 }}>✓ Disimpan</span>}
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div className="section-h">Tukar Kata Laluan</div>
+      <div className="card">
+        <form onSubmit={changePw}>
+          <div className="row col">
+            <div className="stack">
+              <input type="password" placeholder="Kata laluan baharu" autoComplete="new-password"
+                value={pwForm.a} onChange={(e) => setPwForm((f) => ({ ...f, a: e.target.value }))} />
+              <input type="password" placeholder="Sahkan kata laluan baharu" autoComplete="new-password"
+                value={pwForm.b} onChange={(e) => setPwForm((f) => ({ ...f, b: e.target.value }))} />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <button className="btn primary" type="submit">Tukar Kata Laluan</button>
+                {pwMsg && <span style={{ fontSize: 12, color: pwMsg.startsWith('✓') ? 'var(--ok)' : 'var(--danger)' }}>{pwMsg}</span>}
               </div>
             </div>
           </div>

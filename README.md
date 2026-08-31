@@ -79,23 +79,55 @@ Kemudian di GitHub:
 > build kustom). Untuk penggunaan harian, `npm run dev` di komputer sendiri
 > dengan `.env` adalah cara paling mudah.
 
-## 4. Login Admin (Supabase Auth) — lindungi data awak
+> **Keselamatan:** Skema ini guna polisi RLS terbuka (sesuai untuk alat peribadi
+> seorang pengguna). Untuk mod SaaS multi-pengguna, run `schema-saas.sql`
+> selepas deploy — lihat bahagian 5 di bawah.
 
-Aplikasi dah ada **skrin log masuk**. Untuk kunci data supaya hanya admin boleh
-nampak, ikut langkah ni mengikut urusan:
+## 4. Login / Daftar akaun (Supabase Auth)
 
-1. **Tunggu deployment siap** (GitHub Actions lulus / Vercel siap rebuild).
-2. Supabase → **SQL Editor** → run keseluruhan fail `supabase/schema-auth.sql`
-   — ini membuang akses awam dan hadkan data kepada admin yang login sahaja.
-3. Buat akaun admin: Supabase → **Authentication → Users → Add user →
-   Create new user** → masukkan email + kata laluan awak → tick
-   **Auto Confirm User** → Save.
-4. (Digalakkan) Supabase → **Authentication → Sign In / Providers → Email** →
-   matikan **Enable Sign Up** supaya orang lain tak boleh daftar sendiri.
-5. Buka aplikasi → log masuk dengan email + kata laluan admin tadi.
+Aplikasi ada **skrin log masuk + daftar akaun** (mod SaaS):
 
-> Selepas langkah 2, sesiapa tanpa akaun admin takkan nampak apa-apa data —
-> walaupun ada URL & anon key. Jangan kongsi kata laluan admin.
+- **Daftar** — pengguna baru klik "Daftar" pada skrin login. Jika Supabase
+  meminta pengesahan email, pengguna perlu klik link dalam email tersebut
+  sebelum boleh log masuk. (Untuk ujian pantas, boleh matikan pengesahan di
+  Authentication → Providers → Email → "Confirm email".)
+- **Lupa kata laluan** — hantar email reset. Supabase menghantar link reset;
+  pastikan **Authentication → URL Configuration → Site URL** diisi dengan URL
+  aplikasi (cth: https://pcjeng.github.io/invois2026/) supaya link membawa
+  ke aplikasi. Selepas klik link, pengguna log masuk dan boleh tukar kata
+  laluan di **Settings → Tukar Kata Laluan**.
+- **Kunci data (WAJIB selepas deploy)** — run `supabase/schema-saas.sql`
+  dalam SQL Editor. Ia menambah lajur `user_id` + polisi RLS per-pengguna:
+  setiap akaun **hanya nampak data sendiri**. Ikut langkah 4 dalam fail SQL
+  tersebut untuk memindahkan data lama kepada akaun admin (ganti
+  `EMAIL_ANDA` dengan email admin, buang `--`, run sekali lagi).
+- **Halang pendaftaran orang lain** (kalau tidak mahu orang ramai daftar):
+  Authentication → Sign In / Providers → Email → matikan **Enable Sign Up**.
+
+## 5. Cloudinary — upload logo/signature & simpan PDF ke cloud
+
+1. Daftar percuma di [cloudinary.com](https://cloudinary.com).
+2. Dashboard → **Settings → Upload → Upload presets → Add upload preset**
+   → namakan (cth: `invois-unsigned`) → **Signing Mode: Unsigned** → Save.
+3. Salin **Cloud name** (di dashboard) dan **nama preset** tersebut.
+4. Masukkan kedua-dua nilai dalam `.env` (lokal) atau `.env.production`
+   (untuk live):
+
+   ```
+   VITE_CLOUDINARY_CLOUD_NAME=cloud-name-anda
+   VITE_CLOUDINARY_UPLOAD_PRESET=invois-unsigned
+   ```
+
+5. Restart dev server / push untuk deploy. Selepas itu:
+   - **Settings** — boleh upload Logo & Signature terus dari fail imej
+     (disimpan ke Cloudinary; pautan imej dijadikan logo/signature dokumen).
+   - **Paparan cetak** — butang **“Simpan PDF ke Cloud”** menjana PDF A4
+     daripada dokumen, upload ke Cloudinary, dan simpan pautan pada dokumen
+     (butang “📎 PDF” akan muncul pada Dashboard).
+
+> Nota: upload guna *unsigned preset* — nama cloud & preset akan tampak dalam
+> kod frontend (standard untuk upload client-side). Had free tier Cloudinary:
+> 25 kredit bulanan (≈25GB bandwidth/5GB storan) — cukup untuk permulaan.
 
 ## Struktur projek
 
@@ -107,16 +139,18 @@ invois-app/
 ├── .env.example            # contoh env Supabase
 ├── .github/workflows/deploy.yml  # auto-deploy ke GitHub Pages
 ├── supabase/
-│   ├── schema.sql          # skema database + RLS (run dalam Supabase SQL Editor)
-│   └── schema-auth.sql     # naik taraf keselamatan: kunci data untuk admin login
+│   ├── schema.sql          # skema asas + RLS
+│   ├── schema-auth.sql     # kunci data untuk login (versi admin tunggal)
+│   └── schema-saas.sql     # SaaS: user_id + polisi per-pengguna + pdf_url
 └── src/
     ├── main.jsx            # entry + HashRouter
     ├── App.jsx             # routes
     ├── styles.css          # tema navy/emas + CSS cetak A4
     ├── lib/
-    │   ├── db.js           # API data + auto pilih backend
-    │   ├── db.supabase.js  # backend Supabase
+    │   ├── db.js           # API data + auto pilih backend + auth facade
+    │   ├── db.supabase.js  # backend Supabase (SaaS: user_id pada semua baris)
     │   ├── db.local.js     # backend localStorage (demo mode)
+    │   ├── cloudinary.js   # upload imej & PDF ke Cloudinary
     │   ├── calc.js         # pengiraan subtotal/discount/tax/total
     │   ├── docTypes.js     # 12 jenis dokumen, prefix, status
     │   └── format.js       # format RM & tarikh

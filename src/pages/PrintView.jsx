@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import * as api from '../lib/db'
+import { uploadPdf, isConfigured as cloudinaryReady } from '../lib/cloudinary'
 import { typeOf } from '../lib/docTypes'
 import { fmtMoney, fmtDate } from '../lib/format'
 
@@ -9,11 +10,53 @@ export default function PrintView() {
   const { id } = useParams()
   const [doc, setDoc] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [savingPdf, setSavingPdf] = useState(false)
+  const [saveMsg, setSaveMsg] = useState('')
 
   useEffect(() => {
     api.getDocument(id).then(setDoc).catch(() => {})
     api.getProfile().then(setProfile).catch(() => {})
   }, [id])
+
+  // Jana PDF dari paparan cetak, upload ke Cloudinary, dan simpan pautan pada dokumen.
+  async function saveToCloud() {
+    if (!cloudinaryReady) {
+      setSaveMsg('Cloudinary belum dikonfigur — lihat README (VITE_CLOUDINARY_*).')
+      return
+    }
+    setSavingPdf(true)
+    setSaveMsg('Sedang jana PDF…')
+    try {
+      const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf'),
+      ])
+      const el = document.querySelector('.sheet')
+      const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' })
+      const imgData = canvas.toDataURL('image/jpeg', 0.92)
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
+      const pageW = 210
+      const pageH = 297
+      const imgH = (canvas.height * pageW) / canvas.width
+      pdf.addImage(imgData, 'JPEG', 0, 0, pageW, imgH)
+      let y = pageH
+      while (y < imgH) {
+        pdf.addPage()
+        pdf.addImage(imgData, 'JPEG', 0, -y, pageW, imgH)
+        y += pageH
+      }
+      setSaveMsg('Sedang upload ke Cloudinary…')
+      const blob = pdf.output('blob')
+      const t = typeOf(doc.doc_type)
+      const res = await uploadPdf(blob, `${t.title}-${doc.doc_number}.pdf`)
+      await api.setPdfUrl(doc.id, res.secure_url)
+      setSaveMsg('✓ PDF disimpan ke Cloud')
+      setDoc((d) => ({ ...d, pdf_url: res.secure_url }))
+    } catch (ex) {
+      setSaveMsg('Gagal: ' + (ex?.message || ex))
+    }
+    setSavingPdf(false)
+  }
 
   if (!doc) {
     return <div className="page"><p style={{ color: 'var(--muted)' }}>Loading…</p></div>
@@ -26,8 +69,24 @@ export default function PrintView() {
     <div>
       <div className="print-toolbar no-print">
         <Link to={`/doc/${doc.id}`}>← Kembali ke editor</Link>
-        <button className="btn primary" onClick={() => window.print()}>🖨 Print / Save PDF</button>
+        <span style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {doc.pdf_url && (
+            <a className="btn small" href={doc.pdf_url} target="_blank" rel="noreferrer">📎 PDF tersimpan</a>
+          )}
+          <button className="btn" onClick={saveToCloud} disabled={savingPdf}>☁️ Simpan PDF ke Cloud</button>
+          <button className="btn primary" onClick={() => window.print()}>🖨 Print / Save PDF</button>
+        </span>
       </div>
+      {saveMsg && (
+        <div className="no-print" style={{ maxWidth: 820, margin: '0 auto 8px', padding: '0 16px' }}>
+          <span className={saveMsg.startsWith('✓') ? 'upload-ok' : 'upload-hint'}>{saveMsg}</span>
+          {doc.pdf_url && saveMsg.startsWith('✓') && (
+            <a href={doc.pdf_url} target="_blank" rel="noreferrer" style={{ marginLeft: 8, fontSize: 13 }}>
+              Buka PDF
+            </a>
+          )}
+        </div>
+      )}
 
       <div className="print-wrap">
         <div className="sheet">

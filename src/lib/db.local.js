@@ -164,3 +164,13 @@ export async function setArchived(id, archived) {
     write(KEYS.docs, list)
   }
 }
+
+export async function setPdfUrl(id, url) {
+  const list = read(KEYS.docs, [])
+  const d = list.find((x) => x.id === id)
+  if (d) {
+    d.pdf_url = url
+    d.updated_at = new Date().toISOString()
+    write(KEYS.docs, list)
+  }
+}

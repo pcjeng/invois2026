@@ -111,6 +111,9 @@ export default function Dashboard() {
             <div className="doc-actions">
               <button className="btn small" onClick={() => navigate(`/doc/${d.id}`)}>✏️ Edit</button>
               <button className="btn small" onClick={() => navigate(`/doc/${d.id}/print`)}>🖨 Print</button>
+              {d.pdf_url && (
+                <a className="btn small" href={d.pdf_url} target="_blank" rel="noreferrer">📎 PDF</a>
+              )}
               <button className="btn small" onClick={() => duplicate(d)}>⧉ Copy</button>
               <button
                 className="btn small"
