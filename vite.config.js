@@ -10,7 +10,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['icons/favicon-64.png', 'icons/apple-touch-icon.png'],
+      includeAssets: ['icons/favicon-32x32.png', 'icons/favicon-16x16.png', 'icons/apple-touch-icon.png', 'favicon.ico'],
       manifest: {
         name: 'PcJeng Invoices',
         short_name: 'PcJeng',
