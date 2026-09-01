@@ -5,21 +5,28 @@ import { uploadPdf, isConfigured as cloudinaryReady } from '../lib/cloudinary'
 import { typeOf } from '../lib/docTypes'
 import { fmtMoney, fmtDate } from '../lib/format'
 
-// Paparan cetak/PDF — templat ikut contoh rujukan (RAZZAQU):
-// Tajuk besar → blok syarikat + meta nombor/tarikh/Amount Due → BILL TO →
-// jadual Items|Quantity|Price|Amount → Total → bayaran → Amount Due →
-// Term & Conditions → 3 ruang tanda (Customer Sign | Company Seal | Authorised Signatory).
-// Butang: Print, Download PDF, Share PDF (native share sheet), Simpan ke Cloud.
+// Paparan cetak/PDF — templat ikut contoh rujukan (RAZZAQU) + bayaran:
+// Tajuk besar → header (logo kiri, tajuk + blok syarikat kanan) → nombor/tarikh/Amount Due →
+// BILL TO → jadual Items|Quantity|Price|Amount → Total → baris bayaran → Amount Due →
+// Term & Conditions → Customer Sign | Company Seal | Authorised Signatory → footer.
 export default function PrintView() {
   const { id } = useParams()
   const [doc, setDoc] = useState(null)
   const [profile, setProfile] = useState(null)
+  const [payments, setPayments] = useState([])
   const [busy, setBusy] = useState('')
   const [saveMsg, setSaveMsg] = useState('')
   const [pdfBlob, setPdfBlob] = useState(null)
 
   useEffect(() => {
-    api.getDocument(id).then(setDoc).catch(() => {})
+    api.getDocument(id)
+      .then((d) => {
+        setDoc(d)
+        if (['invoice', 'tax_invoice', 'proforma'].includes(d.doc_type)) {
+          api.listPayments(d.id).then(setPayments).catch(() => {})
+        }
+      })
+      .catch(() => {})
     api.getProfile().then(setProfile).catch(() => {})
   }, [id])
 
@@ -31,11 +38,12 @@ export default function PrintView() {
   const totals = api.computeTotals(doc.items || [], doc.discount, doc.tax_rate)
   const isInvoice = ['invoice', 'tax_invoice', 'proforma'].includes(doc.doc_type)
   const isReceipt = type.isReceipt
-  const paid = isInvoice && doc.status === 'Paid'
-  const amountDue = paid ? 0 : totals.total
+  const totalPaid = (payments || []).reduce((s, p) => s + Number(p.amount || 0), 0)
+  const amountDue = isReceipt ? totals.total : Math.max(totals.total - totalPaid, 0)
   const fileName = `${type.title}_${String(doc.customer_name || 'customer').replace(/[\\/:*?"<>|]/g, '')}_${type.prefix}${doc.doc_number}.pdf`
 
-  // Jana blob PDF (A4, multi-page) daripada paparan cetak
+  // Jana blob PDF (A4, multi-page) daripada paparan cetak — useCORS supaya
+  // imej Cloudinary (logo/cop/signature) turut dirender dalam PDF.
   async function generateBlob() {
     const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
       import('html2canvas'),
@@ -231,12 +239,15 @@ export default function PrintView() {
               <div className="t"><span>Tax ({doc.tax_rate}%)</span><span>{fmtMoney(totals.tax)}</span></div>
             )}
             <div className="t"><span>Total</span><span><b>RM {Number(totals.total).toFixed(2)}</b></span></div>
-            {isInvoice && paid && (
-              <div className="t"><span>Payment received in full (-)</span><span>- RM {Number(totals.total).toFixed(2)}</span></div>
-            )}
+            {(payments || []).map((p) => (
+              <div className="t" key={p.id}>
+                <span>Payment on {fmtDate(p.pay_date)} using {p.method || 'payment'} (-)</span>
+                <span>- RM {Number(p.amount).toFixed(2)}</span>
+              </div>
+            ))}
             <div className="t grand">
               <span>{isReceipt ? 'Amount Paid (MYR)' : 'Amount Due (MYR)'}</span>
-              <span>RM {Number(paid ? 0 : totals.total).toFixed(2)}</span>
+              <span>RM {Number(amountDue).toFixed(2)}</span>
             </div>
           </div>
 

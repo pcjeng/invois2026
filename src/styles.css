@@ -542,6 +542,10 @@ input, select, textarea { font-family: inherit; font-size: 15px; color: var(--te
   display: flex; justify-content: space-between; align-items: center;
   border-bottom: 1px dashed var(--line); padding: 6px 0; font-size: 14px;
 }
+.pay-line {
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px dashed var(--line); padding: 6px 0; font-size: 14px;
+}
 .toolbar-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
 /* ---------- Header templat (logo kiri + tajuk/blok syarikat kanan) ---------- */
