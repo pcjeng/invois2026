@@ -166,7 +166,6 @@ export default function PrintView() {
               {profile?.logo_url && (
                 <img src={profile.logo_url} crossOrigin="anonymous" alt="logo" />
               )}
-              {profile?.name && <div className="inv-wordmark">{profile.name}</div>}
             </div>
             <div className="inv-head-right">
               <h1 className="inv-bigtitle">{type.title}</h1>
