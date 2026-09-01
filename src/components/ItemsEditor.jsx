@@ -2,11 +2,17 @@ import { useState } from 'react'
 import { fmtMoney } from '../lib/format'
 import * as api from '../lib/db'
 
-// Editor baris item: description, qty, unit, unit price — amount auto.
-// "Saved Items" menarik item dari katalog (Settings) untuk tambah pantas.
+// Editor baris item borang invoice/quote.
+// Aliran utama (ikut rujukan): butang "🛒 Add Product" buka sheet PEMILIH PRODUK —
+// senarai produk tersimpan (boleh cari), ketuk untuk tambah terus ke baris item.
+// "⊕ create new item" dalam sheet membolehkan produk baru dicipta tanpa keluar.
 export default function ItemsEditor({ items, onChange }) {
   const [picker, setPicker] = useState(false)
   const [saved, setSaved] = useState([])
+  const [search, setSearch] = useState('')
+  const [creating, setCreating] = useState(false)
+  const [newForm, setNewForm] = useState({ name: '', price: '', unit: '' })
+  const [msg, setMsg] = useState('')
 
   function set(i, k, v) {
     onChange(items.map((it, idx) => (idx === i ? { ...it, [k]: v } : it)))
@@ -24,10 +30,13 @@ export default function ItemsEditor({ items, onChange }) {
     } catch {
       setSaved([])
     }
+    setSearch('')
+    setCreating(false)
+    setMsg('')
     setPicker(true)
   }
 
-  function pickSaved(si) {
+  function addProductRow(si) {
     onChange([
       ...items,
       {
@@ -37,8 +46,41 @@ export default function ItemsEditor({ items, onChange }) {
         unit_price: Number(si.unit_price) || 0,
       },
     ])
-    setPicker(false)
+    setMsg('✓ ' + si.description + ' ditambah ke dokumen')
   }
+
+  async function createItem(e) {
+    e.preventDefault()
+    if (!String(newForm.name).trim()) { setMsg('Name produk diperlukan.'); return }
+    try {
+      const created = await api.saveSavedItem({
+        description: String(newForm.name).trim(),
+        unit: String(newForm.unit).trim(),
+        unit_price: Number(newForm.price) || 0,
+      })
+      onChange([
+        ...items,
+        {
+          description: created.description,
+          quantity: 1,
+          unit: created.unit || '',
+          unit_price: Number(created.unit_price) || 0,
+        },
+      ])
+      setSaved(await api.listSavedItems())
+      setCreating(false)
+      setNewForm({ name: '', price: '', unit: '' })
+      setMsg('✓ Produk baru dicipta & ditambah')
+    } catch (ex) {
+      setMsg('Gagal: ' + (ex?.message || ex))
+    }
+  }
+
+  const filtered = saved.filter(
+    (s) =>
+      !search.trim() ||
+      String(s.description).toLowerCase().includes(search.trim().toLowerCase())
+  )
 
   return (
     <div>
@@ -67,27 +109,71 @@ export default function ItemsEditor({ items, onChange }) {
       ))}
       <div className="items-footer">
         <button className="btn" onClick={add}>＋ Add Row</button>
-        <button className="btn" onClick={openPicker}>★ Saved Items</button>
+        <button className="btn gold" onClick={openPicker}>🛒 Add Product</button>
       </div>
 
       {picker && (
-        <div className="modal-overlay" onClick={() => setPicker(false)}>
-          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-title">
-              Saved Items
+        <div className="add-overlay" onClick={() => setPicker(false)}>
+          <div className="pick-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="add-head">
+              Pilih Produk
               <button onClick={() => setPicker(false)} aria-label="tutup">✕</button>
             </div>
-            {saved.length === 0 && (
-              <p style={{ padding: 16, color: '#757575' }}>
-                Tiada saved items lagi. Tambah dalam page Settings.
-              </p>
+            {msg && <div className="pick-msg">{msg}</div>}
+            {!creating && (
+              <>
+                <input
+                  className="pick-search"
+                  placeholder="Cari produk…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <div className="pick-list">
+                  {filtered.length === 0 && (
+                    <p className="pick-empty">
+                      Tiada produk. Tekan "⊕ create new item" di bawah untuk tambah.
+                    </p>
+                  )}
+                  {filtered.map((si) => (
+                    <button key={si.id} className="pick-row" onClick={() => addProductRow(si)}>
+                      <span className="pick-name">
+                        {si.description}{si.unit ? ` (${si.unit})` : ''}
+                      </span>
+                      <span className="pick-price">{fmtMoney(si.unit_price)}</span>
+                    </button>
+                  ))}
+                </div>
+                <button className="pick-create" onClick={() => setCreating(true)}>
+                  ⊕ create new item
+                </button>
+              </>
             )}
-            {saved.map((si) => (
-              <button key={si.id} className="picker-item" onClick={() => pickSaved(si)}>
-                <span>{si.description}</span>
-                <span className="check">{fmtMoney(si.unit_price)}</span>
-              </button>
-            ))}
+            {creating && (
+              <form className="pick-form" onSubmit={createItem}>
+                <input
+                  placeholder="Name produk *"
+                  value={newForm.name}
+                  onChange={(e) => setNewForm((f) => ({ ...f, name: e.target.value }))}
+                  autoFocus
+                />
+                <div className="two-col">
+                  <input
+                    type="number" step="0.01" min="0" placeholder="Price (RM)"
+                    value={newForm.price}
+                    onChange={(e) => setNewForm((f) => ({ ...f, price: e.target.value }))}
+                  />
+                  <input
+                    placeholder="Unit (pcs / unit / jam)"
+                    value={newForm.unit}
+                    onChange={(e) => setNewForm((f) => ({ ...f, unit: e.target.value }))}
+                  />
+                </div>
+                <div className="pick-form-actions">
+                  <button className="btn gold" type="submit">Simpan &amp; Tambah</button>
+                  <button className="btn" type="button" onClick={() => setCreating(false)}>Batal</button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
