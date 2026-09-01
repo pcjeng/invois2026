@@ -42,7 +42,12 @@ export default function PrintView() {
       import('jspdf'),
     ])
     const el = document.querySelector('.sheet')
-    const canvas = await html2canvas(el, { scale: 2, backgroundColor: '#ffffff' })
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+    })
     const imgData = canvas.toDataURL('image/jpeg', 0.92)
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
     const pageW = 210
@@ -148,28 +153,36 @@ export default function PrintView() {
 
       <div className="print-wrap">
         <div className="sheet">
-          <h1 className="inv-title">{type.title}</h1>
-
-          <div className="inv-top">
-            <div className="inv-company">
-              <h2>{profile?.name || '\u00A0'}</h2>
-              <p>{profile?.address || ''}</p>
-              {profile?.phone && <p>Mobile : {profile.phone}</p>}
-              {profile?.email && <p>Email : {profile.email}</p>}
-            </div>
-            <div className="inv-meta">
-              <div>
-                <strong>{isReceipt ? 'Receipt Number' : isInvoice ? 'Invoice Number' : `${type.title} Number`}</strong> : {type.prefix}-{doc.doc_number ?? '—'}
-              </div>
-              <div>
-                {isInvoice ? 'Invoice Date' : 'Date'} : {fmtDate(doc.issue_date)}
-              </div>
-              {!isReceipt && doc.due_date && (
-                <div>Payment Due Date : {fmtDate(doc.due_date)}</div>
+          <div className="inv-header">
+            <div className="inv-logo">
+              {profile?.logo_url && (
+                <img src={profile.logo_url} crossOrigin="anonymous" alt="logo" />
               )}
-              <div>
-                {isReceipt ? 'Amount (MYR)' : 'Amount Due (MYR)'} : <strong>RM {Number(totals.total).toFixed(2)}</strong>
+              {profile?.name && <div className="inv-wordmark">{profile.name}</div>}
+            </div>
+            <div className="inv-head-right">
+              <h1 className="inv-bigtitle">{type.title}</h1>
+              <div className="inv-company">
+                <h2>{profile?.name || '\u00A0'}</h2>
+                <p>{profile?.address || ''}</p>
+                {profile?.phone && <p>Mobile : {profile.phone}</p>}
+                {profile?.email && <p>Email : {profile.email}</p>}
               </div>
+            </div>
+          </div>
+          <hr className="inv-divider" />
+          <div className="inv-nums">
+            <div>
+              <strong>{isReceipt ? 'Receipt Number' : isInvoice ? 'Invoice Number' : `${type.title} Number`} :</strong> {type.prefix}-{doc.doc_number ?? '—'}
+            </div>
+            <div>
+              <strong>{isInvoice ? 'Invoice Date' : 'Date'} :</strong> {fmtDate(doc.issue_date)}
+            </div>
+            {!isReceipt && doc.due_date && (
+              <div><strong>Payment Due Date :</strong> {fmtDate(doc.due_date)}</div>
+            )}
+            <div>
+              <strong>{isReceipt ? 'Amount (MYR)' : 'Amount Due (MYR)'} :</strong> RM {Number(totals.total).toFixed(2)}
             </div>
           </div>
 
@@ -243,13 +256,13 @@ export default function PrintView() {
             </div>
             <div>
               <div className="sign-area">
-                {profile?.stamp_url && <img src={profile.stamp_url} alt="Company Seal" />}
+                {profile?.stamp_url && <img src={profile.stamp_url} crossOrigin="anonymous" alt="Company Seal" />}
               </div>
               <p>Company Seal</p>
             </div>
             <div>
               <div className="sign-area">
-                {profile?.signature_url && <img className="sig-img" src={profile.signature_url} alt="signature" />}
+                {profile?.signature_url && <img className="sig-img" src={profile.signature_url} crossOrigin="anonymous" alt="signature" />}
                 {!profile?.signature_url && '\u00A0'}
               </div>
               <p>For {profile?.name || '\u00A0'}<br />Authorised Signatory</p>
