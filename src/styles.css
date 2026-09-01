@@ -227,11 +227,14 @@ input, select, textarea { font-family: inherit; font-size: 15px; color: var(--te
 }
 .month-scroll {
   display: flex; gap: 10px; overflow-x: auto; padding: 12px;
+  position: relative; scroll-behavior: smooth;
 }
 .month-card {
-  min-width: 150px; border: 1px solid var(--line); border-radius: 12px;
-  padding: 10px; text-align: center; flex: none;
+  flex: none; width: calc((100% - 20px) / 3); min-width: 128px;
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 10px; text-align: center;
 }
+.month-card.current { border-color: #00AEEF; border-width: 2px; }
 .month-card .m-label { font-weight: 700; margin-bottom: 8px; }
 .m-boxes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .m-box { border-radius: 10px; color: #fff; padding: 10px 4px; font-weight: 700; display: flex; flex-direction: column; }

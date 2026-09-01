@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as api from '../lib/db'
 import { DOC_TYPES, typeOf } from '../lib/docTypes'
@@ -58,6 +58,16 @@ export default function Dashboard() {
   const [hasCompany, setHasCompany] = useState(false)
   const [role, setRole] = useState('user')
   const [platformUsers, setPlatformUsers] = useState(0)
+  const monthScrollRef = useRef(null)
+
+  // Bila tahun bertukar: scroll terus ke bulan semasa (tahun semasa) atau Januari (tahun lain)
+  useEffect(() => {
+    const container = monthScrollRef.current
+    if (!container) return
+    const idx = year === YEAR_NOW ? new Date().getMonth() : 0
+    const el = container.querySelector(`[data-m="${idx}"]`)
+    if (el) container.scrollLeft = el.offsetLeft - 12
+  }, [year, loading])
 
   async function load() {
     setLoading(true)
@@ -183,13 +193,13 @@ export default function Dashboard() {
           </select>
         </div>
         <div className="dash-section-body">
-          <div className="month-scroll">
+          <div className="month-scroll" ref={monthScrollRef}>
             {MONTHS.map((m, mi) => {
               const md = yDocs.filter((d) => Number(String(d.issue_date || '').slice(5, 7)) === mi + 1)
               const inv = fmt2(sumOf(md, INV))
               const pay = fmt2(sumOf(md, RCP))
               return (
-                <div className="month-card" key={m}>
+                <div className={'month-card' + (mi === new Date().getMonth() && year === YEAR_NOW ? ' current' : '')} data-m={mi} key={m}>
                   <div className="m-label">{m}</div>
                   <div className="m-boxes">
                     <div className="m-box red"><small>Inv</small><span>{inv}</span></div>
