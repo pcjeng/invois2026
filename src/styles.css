@@ -168,9 +168,13 @@ input, select, textarea { font-family: inherit; font-size: 15px; color: var(--te
 
 /* ---------- Items editor ---------- */
 .item-box { padding: 10px 16px; border-bottom: 1px solid var(--line); }
-.item-box .line1 { display: flex; gap: 6px; }
+.item-box .line1 { display: flex; gap: 6px; align-items: center; }
 .item-box .line1 input {
   flex: 1; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+}
+.item-desc-input {
+  width: 100%; margin-top: 6px; border: 1px solid var(--line);
+  border-radius: 8px; padding: 8px 10px;
 }
 .item-box .line2 { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
 .item-box .line2 input {

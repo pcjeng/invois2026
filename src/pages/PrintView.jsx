@@ -138,7 +138,12 @@ export default function PrintView() {
               {(doc.items || []).map((it, i) => (
                 <tr key={i}>
                   <td>{i + 1}</td>
-                  <td>{it.description}</td>
+                  <td>
+                    <div style={{ fontWeight: 700 }}>{it.item_name || it.description}</div>
+                    {it.item_name && it.description ? (
+                      <div style={{ fontSize: 12, color: '#555' }}>{it.description}</div>
+                    ) : null}
+                  </td>
                   <td className="r">{it.quantity}</td>
                   <td>{it.unit || ''}</td>
                   <td className="r">{fmtMoney(it.unit_price)}</td>

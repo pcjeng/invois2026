@@ -83,9 +83,10 @@ export async function deleteSavedItem(id) {
 // ---------- documents ----------
 function cleanItems(items) {
   return (items || [])
-    .filter((it) => String(it.description || '').trim() !== '')
+    .filter((it) => String(it.item_name || '').trim() !== '' || String(it.description || '').trim() !== '')
     .map((it, i) => ({
-      description: it.description,
+      item_name: it.item_name || '',
+      description: it.description || '',
       quantity: num(it.quantity),
       unit: it.unit || '',
       unit_price: num(it.unit_price),

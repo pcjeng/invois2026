@@ -234,7 +234,9 @@ export async function getDocument(id) {
 export async function saveDocument(doc) {
   const u = await uid()
   if (!u) throw new Error('Belum log masuk')
-  const items = (doc.items || []).filter((it) => String(it.description || '').trim() !== '')
+  const items = (doc.items || []).filter(
+    (it) => String(it.item_name || '').trim() !== '' || String(it.description || '').trim() !== ''
+  )
   const totals = computeTotals(items, doc.discount, doc.tax_rate)
 
   const row = {
@@ -274,6 +276,7 @@ export async function saveDocument(doc) {
     document_id: docId,
     user_id: u,
     position: i,
+    item_name: it.item_name || '',
     description: it.description,
     quantity: num(it.quantity),
     unit: it.unit || '',

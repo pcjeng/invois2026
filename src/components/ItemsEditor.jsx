@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { fmtMoney } from '../lib/format'
 import * as api from '../lib/db'
 
-// Editor baris item borang invoice/quote.
-// Aliran utama (ikut rujukan): butang "🛒 Add Product" buka sheet PEMILIH PRODUK —
-// senarai produk tersimpan (boleh cari), ketuk untuk tambah terus ke baris item.
-// "⊕ create new item" dalam sheet membolehkan produk baru dicipta tanpa keluar.
+// Editor baris item borang invoice/quote — SETIAP baris ada 2 medan:
+//   1) Nama Item  — pilih produk dari katalog (🛒) / taip manual
+//   2) Description — teks bebas
+// Sheet pemilih produk: cari, ketuk utk pilih, dan "⊕ create new item"
+// untuk tambah produk baru terus (tanpa keluar dari editor).
 export default function ItemsEditor({ items, onChange }) {
   const [picker, setPicker] = useState(false)
+  const [pickerTarget, setPickerTarget] = useState('new') // 'new' | index baris
   const [saved, setSaved] = useState([])
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
@@ -18,35 +20,38 @@ export default function ItemsEditor({ items, onChange }) {
     onChange(items.map((it, idx) => (idx === i ? { ...it, [k]: v } : it)))
   }
   function add() {
-    onChange([...items, { description: '', quantity: 1, unit: '', unit_price: 0 }])
+    onChange([...items, { item_name: '', description: '', quantity: 1, unit: '', unit_price: 0 }])
   }
   function remove(i) {
     onChange(items.filter((_, idx) => idx !== i))
   }
 
-  async function openPicker() {
+  async function openPicker(target) {
     try {
       setSaved(await api.listSavedItems())
     } catch {
       setSaved([])
     }
+    setPickerTarget(target)
     setSearch('')
     setCreating(false)
     setMsg('')
     setPicker(true)
   }
 
-  function addProductRow(si) {
-    onChange([
-      ...items,
-      {
-        description: si.description,
-        quantity: 1,
-        unit: si.unit || '',
-        unit_price: Number(si.unit_price) || 0,
-      },
-    ])
-    setMsg('✓ ' + si.description + ' ditambah ke dokumen')
+  function applyProduct(si) {
+    const filled = {
+      item_name: si.description,
+      unit: si.unit || '',
+      unit_price: Number(si.unit_price) || 0,
+    }
+    if (pickerTarget === 'new') {
+      onChange([...items, { ...filled, description: '', quantity: 1 }])
+    } else {
+      const idx = Number(pickerTarget)
+      onChange(items.map((it, i) => (i === idx ? { ...it, ...filled } : it)))
+    }
+    setMsg('✓ ' + si.description + ' dipilih')
   }
 
   async function createItem(e) {
@@ -58,19 +63,11 @@ export default function ItemsEditor({ items, onChange }) {
         unit: String(newForm.unit).trim(),
         unit_price: Number(newForm.price) || 0,
       })
-      onChange([
-        ...items,
-        {
-          description: created.description,
-          quantity: 1,
-          unit: created.unit || '',
-          unit_price: Number(created.unit_price) || 0,
-        },
-      ])
+      applyProduct(created)
       setSaved(await api.listSavedItems())
       setCreating(false)
       setNewForm({ name: '', price: '', unit: '' })
-      setMsg('✓ Produk baru dicipta & ditambah')
+      setMsg('✓ Produk baru dicipta: ' + created.description)
     } catch (ex) {
       setMsg('Gagal: ' + (ex?.message || ex))
     }
@@ -88,12 +85,25 @@ export default function ItemsEditor({ items, onChange }) {
         <div className="item-box" key={i}>
           <div className="line1">
             <input
-              placeholder="Description"
-              value={it.description || ''}
-              onChange={(e) => set(i, 'description', e.target.value)}
+              placeholder="Nama Item (pilih produk / taip)"
+              value={it.item_name || ''}
+              onChange={(e) => set(i, 'item_name', e.target.value)}
             />
+            <button
+              className="btn small gold"
+              onClick={() => openPicker(i)}
+              title="Pilih produk dari katalog / tambah baru"
+            >
+              🛒
+            </button>
             <button className="del" onClick={() => remove(i)} title="Remove item">✕</button>
           </div>
+          <input
+            className="item-desc-input"
+            placeholder="Description"
+            value={it.description || ''}
+            onChange={(e) => set(i, 'description', e.target.value)}
+          />
           <div className="line2">
             <input className="q" type="number" step="any" min="0" placeholder="Qty"
               value={it.quantity ?? ''} onChange={(e) => set(i, 'quantity', e.target.value)} />
@@ -109,14 +119,14 @@ export default function ItemsEditor({ items, onChange }) {
       ))}
       <div className="items-footer">
         <button className="btn" onClick={add}>＋ Add Row</button>
-        <button className="btn gold" onClick={openPicker}>🛒 Add Product</button>
+        <button className="btn gold" onClick={() => openPicker('new')}>🛒 Add Product</button>
       </div>
 
       {picker && (
         <div className="add-overlay" onClick={() => setPicker(false)}>
           <div className="pick-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="add-head">
-              Pilih Produk
+              {pickerTarget === 'new' ? 'Pilih Produk (item baharu)' : `Pilih Produk (Item #${Number(pickerTarget) + 1})`}
               <button onClick={() => setPicker(false)} aria-label="tutup">✕</button>
             </div>
             {msg && <div className="pick-msg">{msg}</div>}
@@ -135,7 +145,7 @@ export default function ItemsEditor({ items, onChange }) {
                     </p>
                   )}
                   {filtered.map((si) => (
-                    <button key={si.id} className="pick-row" onClick={() => addProductRow(si)}>
+                    <button key={si.id} className="pick-row" onClick={() => applyProduct(si)}>
                       <span className="pick-name">
                         {si.description}{si.unit ? ` (${si.unit})` : ''}
                       </span>
@@ -169,7 +179,7 @@ export default function ItemsEditor({ items, onChange }) {
                   />
                 </div>
                 <div className="pick-form-actions">
-                  <button className="btn gold" type="submit">Simpan &amp; Tambah</button>
+                  <button className="btn gold" type="submit">Simpan &amp; Guna</button>
                   <button className="btn" type="button" onClick={() => setCreating(false)}>Batal</button>
                 </div>
               </form>
