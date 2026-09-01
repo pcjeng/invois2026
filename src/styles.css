@@ -493,6 +493,56 @@ input, select, textarea { font-family: inherit; font-size: 15px; color: var(--te
 .signature-row .sig { max-height: 70px; margin-bottom: -8px; }
 .sheet footer { margin-top: 36px; text-align: center; color: var(--muted); font-size: 12px; }
 
+/* ---------- Templat invoice/quote ikut contoh rujukan ---------- */
+.inv-title {
+  text-align: center; font-size: 24px; font-weight: 800;
+  letter-spacing: 3px; color: #111; margin: 0 0 16px;
+}
+.inv-top { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+.inv-company h2 { margin: 0 0 4px; font-size: 17px; color: #111; }
+.inv-company p { margin: 0; font-size: 12.5px; color: #333; }
+.inv-meta { text-align: right; font-size: 13px; min-width: 230px; }
+.inv-meta div { margin: 2px 0; }
+.inv-billto { margin-top: 16px; }
+.inv-billto h3 {
+  margin: 0 0 4px; font-size: 12px; color: #555;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.inv-billto p { margin: 1px 0; font-size: 13.5px; }
+.items-table.raz { margin-top: 16px; }
+.items-table.raz th { border-bottom: 2px solid #333; color: #111; }
+.inv-totals { margin-top: 12px; margin-left: auto; width: 300px; font-size: 13.5px; }
+.inv-totals .t { display: flex; justify-content: space-between; padding: 4px 0; }
+.inv-totals .t.grand {
+  border-top: 2px solid #333; font-weight: 800; font-size: 15px;
+  margin-top: 6px; padding-top: 8px;
+}
+.inv-tnc { margin-top: 18px; }
+.inv-tnc h3 {
+  margin: 0 0 4px; font-size: 12px; color: #555;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.inv-tnc p { margin: 0; font-size: 12.5px; white-space: pre-line; }
+.inv-thanks { margin-top: 16px; font-size: 13px; }
+.inv-signs {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+  margin-top: 46px; text-align: center; font-size: 12px; color: #111;
+}
+.inv-signs .sign-area {
+  min-height: 64px; display: flex; align-items: flex-end;
+  justify-content: center; overflow: hidden;
+}
+.inv-signs .sign-area img { max-height: 64px; max-width: 100%; object-fit: contain; }
+.inv-signs p { margin: 6px 0 0; border-top: 1px solid #333; padding-top: 4px; line-height: 1.4; }
+.inv-footer {
+  margin-top: 26px; display: flex; justify-content: space-between;
+  color: #777; font-size: 11px; gap: 10px; flex-wrap: wrap;
+}
+.toolbar-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+@media print {
+  .toolbar-group { display: none !important; }
+}
+
 @media print {
   .no-print { display: none !important; }
   body { background: #fff; }

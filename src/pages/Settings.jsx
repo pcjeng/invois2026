@@ -20,6 +20,7 @@ export default function Settings() {
   const [pwMsg, setPwMsg] = useState('')
   const logoFileRef = useRef(null)
   const sigFileRef = useRef(null)
+  const stampFileRef = useRef(null)
 
   useEffect(() => {
     api.getProfile().then((p) => { if (p) setProfile({ ...EMPTY_PROFILE, ...p }) }).catch(() => {})
@@ -61,6 +62,7 @@ export default function Settings() {
     // benar pilih fail yang sama semula
     if (kind === 'logo_url' && logoFileRef.current) logoFileRef.current.value = ''
     if (kind === 'signature_url' && sigFileRef.current) sigFileRef.current.value = ''
+    if (kind === 'stamp_url' && stampFileRef.current) stampFileRef.current.value = ''
   }
 
   async function saveItem(e) {
@@ -136,6 +138,20 @@ export default function Settings() {
                 {profile.signature_url && <img src={profile.signature_url} alt="signature" style={{ maxHeight: 40, maxWidth: 120, objectFit: 'contain' }} />}
               </div>
               <input placeholder="…atau tampal Signature URL" value={profile.signature_url || ''} onChange={(e) => setP('signature_url', e.target.value)} />
+
+              <label style={{ fontSize: 13, fontWeight: 600, marginTop: 6 }}>Cop Syarikat (Company Seal)</label>
+              <div className="upload-row">
+                <input
+                  ref={stampFileRef}
+                  type="file"
+                  accept="image/*"
+                  className="file-btn"
+                  onChange={(e) => handleUpload('stamp_url', e)}
+                  disabled={!cloudinaryReady || uploading === 'stamp_url'}
+                />
+                {profile.stamp_url && <img src={profile.stamp_url} alt="cop" style={{ maxHeight: 40, maxWidth: 90, objectFit: 'contain' }} />}
+              </div>
+              <input placeholder="…atau tampal Cop URL" value={profile.stamp_url || ''} onChange={(e) => setP('stamp_url', e.target.value)} />
               {uploadMsg && <span className={uploadMsg.startsWith('✓') ? 'upload-ok' : 'alert'} style={{ display: 'inline-block' }}>{uploadMsg}</span>}
               {!cloudinaryReady && (
                 <span className="upload-hint">

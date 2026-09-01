@@ -105,6 +105,7 @@ export async function saveProfile(p) {
     email: p.email || '',
     logo_url: p.logo_url || '',
     signature_url: p.signature_url || '',
+    stamp_url: p.stamp_url || '',
     default_tax_rate: num(p.default_tax_rate),
     updated_at: new Date().toISOString(),
   }
