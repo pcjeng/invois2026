@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import * as api from '../lib/db'
 import { typeOf, statusOptionsFor, PAYMENT_METHODS } from '../lib/docTypes'
-import { fmtMoney } from '../lib/format'
+import { fmtMoney, fmtDate, todayISO } from '../lib/format'
 import DocTypePicker from '../components/DocTypePicker'
 import ItemsEditor from '../components/ItemsEditor'
 
@@ -21,6 +21,8 @@ export default function Editor() {
   const [numberTouched, setNumberTouched] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [payments, setPayments] = useState([])
+  const [payForm, setPayForm] = useState({ pay_date: todayISO(), method: 'Bank Transfer', amount: '' })
 
   useEffect(() => {
     api.getProfile().then((p) => {
@@ -38,6 +40,9 @@ export default function Editor() {
         .then((d) => {
           setDoc({ ...api.emptyDocument(d.doc_type), ...d })
           setNumberTouched(true)
+          if (['invoice', 'tax_invoice', 'proforma'].includes(d.doc_type)) {
+            api.listPayments(d.id).then(setPayments).catch(() => {})
+          }
         })
         .catch(() => setError('Dokumen tidak dijumpai.'))
     } else {
@@ -95,6 +100,33 @@ export default function Editor() {
           customer_email: c.email || '',
         }))
       }
+    }
+  }
+
+  // ---------- Bayaran (payments) untuk invois ----------
+  async function addPay(e) {
+    e.preventDefault()
+    if (!Number(payForm.amount)) { setError('Masukkan jumlah bayaran.'); return }
+    try {
+      const p = await api.addPayment({
+        document_id: id,
+        pay_date: payForm.pay_date,
+        method: payForm.method,
+        amount: payForm.amount,
+      })
+      setPayments((ps) => [...ps, p])
+      setPayForm((f) => ({ ...f, amount: '' }))
+    } catch (ex) {
+      setError('Gagal tambah bayaran: ' + (ex?.message || ex))
+    }
+  }
+
+  async function delPay(pid) {
+    try {
+      await api.deletePayment(pid)
+      setPayments((ps) => ps.filter((x) => x.id !== pid))
+    } catch (ex) {
+      setError('Gagal padam bayaran: ' + (ex?.message || ex))
     }
   }
 
@@ -194,6 +226,56 @@ export default function Editor() {
         <div className="t-row"><span>Tax Amount</span><span>{fmtMoney(totals.tax)}</span></div>
         <div className="t-row grand"><span>TOTAL</span><span>{fmtMoney(totals.total)}</span></div>
       </div>
+
+      {/invoice|tax_invoice|proforma/.test(doc.doc_type) && (
+        <div className="card">
+          <div className="row col">
+            <span>Payments (Bayaran)</span>
+            <div className="stack">
+              {!id && (
+                <p className="upload-hint" style={{ margin: 0 }}>
+                  Simpan dokumen dahulu untuk merekod bayaran.
+                </p>
+              )}
+              {id && (
+                <>
+                  {payments.map((p) => (
+                    <div className="pay-line" key={p.id}>
+                      <span>{fmtDate(p.pay_date)} · {p.method || '—'}</span>
+                      <span style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <b>{fmtMoney(p.amount)}</b>
+                        <button className="btn small danger" onClick={() => delPay(p.id)} title="Padam">✕</button>
+                      </span>
+                    </div>
+                  ))}
+                  {payments.length === 0 && (
+                    <p className="upload-hint" style={{ margin: 0 }}>Tiada bayaran direkod lagi.</p>
+                  )}
+                  <form onSubmit={addPay} className="stack">
+                    <div className="two-col">
+                      <input type="date" value={payForm.pay_date} onChange={(e) => setPayForm((f) => ({ ...f, pay_date: e.target.value }))} />
+                      <select value={payForm.method} onChange={(e) => setPayForm((f) => ({ ...f, method: e.target.value }))}>
+                        {PAYMENT_METHODS.map((m) => (
+                          <option key={m} value={m}>{m}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input
+                        type="number" step="0.01" min="0" placeholder="Jumlah bayaran (RM)"
+                        value={payForm.amount}
+                        onChange={(e) => setPayForm((f) => ({ ...f, amount: e.target.value }))}
+                        style={{ flex: 1 }}
+                      />
+                      <button className="btn primary" type="submit">＋ Tambah</button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <label className="row">

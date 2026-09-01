@@ -9,6 +9,7 @@ const KEYS = {
   customers: PREFIX + 'customers',
   saved: PREFIX + 'saved_items',
   docs: PREFIX + 'documents',
+  payments: PREFIX + 'payments',
 }
 
 function read(key, fallback) {
@@ -190,3 +191,18 @@ export async function getMyRole() { return 'user' }
 export async function adminListUsers() { throw new Error('Admin hanya tersedia dalam mod Supabase') }
 export async function adminSetRole() { throw new Error('Admin hanya tersedia dalam mod Supabase') }
 export async function adminSetBanned() { throw new Error('Admin hanya tersedia dalam mod Supabase') }
+
+// ---------- Payments (demo mode) ----------
+export async function listPayments(documentId) {
+  return read(KEYS.payments, []).filter((p) => p.document_id === documentId)
+}
+export async function addPayment(p) {
+  const list = read(KEYS.payments, [])
+  const rec = { ...p, amount: num(p.amount), id: uuid(), created_at: new Date().toISOString() }
+  list.push(rec)
+  write(KEYS.payments, list)
+  return rec
+}
+export async function deletePayment(id) {
+  write(KEYS.payments, read(KEYS.payments, []).filter((x) => x.id !== id))
+}

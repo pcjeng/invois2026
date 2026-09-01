@@ -314,3 +314,40 @@ export async function setArchived(id, archived) {
     .eq('id', id)
   if (error) throw error
 }
+
+// ---------- Payments (bayaran invois) ----------
+export async function listPayments(documentId) {
+  const u = await uid()
+  if (!u) return []
+  const { data, error } = await client
+    .from('payments')
+    .select('*')
+    .eq('document_id', documentId)
+    .eq('user_id', u)
+    .order('pay_date')
+  if (error) throw error
+  return data || []
+}
+
+export async function addPayment(p) {
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
+  const { data, error } = await client
+    .from('payments')
+    .insert({
+      document_id: p.document_id,
+      user_id: u,
+      pay_date: p.pay_date || null,
+      method: p.method || '',
+      amount: num(p.amount),
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deletePayment(id) {
+  const { error } = await client.from('payments').delete().eq('id', id)
+  if (error) throw error
+}

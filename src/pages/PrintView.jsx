@@ -182,7 +182,7 @@ export default function PrintView() {
               <div><strong>Payment Due Date :</strong> {fmtDate(doc.due_date)}</div>
             )}
             <div>
-              <strong>{isReceipt ? 'Amount (MYR)' : 'Amount Due (MYR)'} :</strong> RM {Number(totals.total).toFixed(2)}
+              <strong>{isReceipt ? 'Amount (MYR)' : 'Amount Due (MYR)'} :</strong> RM {Number(amountDue).toFixed(2)}
             </div>
           </div>
 

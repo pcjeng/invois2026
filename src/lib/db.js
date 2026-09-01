@@ -78,6 +78,17 @@ export async function adminSetBanned(target, banned) {
   return (await getBackend()).adminSetBanned(target, banned)
 }
 
+// ---------- Payments (bayaran invois) ----------
+export async function listPayments(documentId) {
+  return (await getBackend()).listPayments(documentId)
+}
+export async function addPayment(p) {
+  return (await getBackend()).addPayment(p)
+}
+export async function deletePayment(id) {
+  return (await getBackend()).deletePayment(id)
+}
+
 export function emptyDocument(typeId = 'quote') {
   return {
     id: null,
