@@ -3,8 +3,9 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { usingSupabase, getSession, getProfile, signOut, onAuthStateChange, getMyRole } from '../lib/db'
 
 const TITLES = [
+  { re: /^\/new-product/, title: 'New Product' },
   { re: /^\/$/, title: 'Documents' },
-  { re: /^\/new/, title: 'New Document' },
+  { re: /^\/new$/, title: 'New Document' },
   { re: /^\/doc\/[^/]+$/, title: 'Edit Document' },
   { re: /^\/customers/, title: 'Customers' },
   { re: /^\/admin/, title: 'Admin' },

@@ -305,6 +305,12 @@ input, select, textarea { font-family: inherit; font-size: 15px; color: var(--te
   color: #fff; font-weight: 800; font-size: 12px; letter-spacing: 0.5px;
 }
 .add-label { font-size: 12px; color: var(--text); text-align: center; }
+.btn-submit {
+  width: 100%; background: #00AEEF; color: #fff;
+  border: none; border-radius: 999px; padding: 12px;
+  font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.btn-submit:disabled { opacity: 0.6; }
 
 /* ---------- Modal ---------- */
 .modal-overlay {
