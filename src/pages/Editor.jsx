@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import * as api from '../lib/db'
 import { typeOf, statusOptionsFor, PAYMENT_METHODS } from '../lib/docTypes'
 import { fmtMoney } from '../lib/format'
@@ -10,8 +10,10 @@ import ItemsEditor from '../components/ItemsEditor'
 // Switch Document → no. dokumen → tarikh → From → Bill To → Items → Totals → Status/Notes.
 export default function Editor() {
   const { id } = useParams()
+  const [searchParams] = useSearchParams()
+  const initialType = searchParams.get('type') || 'quote'
   const navigate = useNavigate()
-  const [doc, setDoc] = useState(() => api.emptyDocument('quote'))
+  const [doc, setDoc] = useState(() => api.emptyDocument(initialType))
   const [profile, setProfile] = useState(null)
   const [customers, setCustomers] = useState([])
   const [showTypePicker, setShowTypePicker] = useState(false)
@@ -39,7 +41,7 @@ export default function Editor() {
         })
         .catch(() => setError('Dokumen tidak dijumpai.'))
     } else {
-      api.nextDocNumber('quote', '')
+      api.nextDocNumber(initialType, '')
         .then((n) => setDoc((d) => (d.doc_number ? d : { ...d, doc_number: String(n) })))
         .catch(() => {})
     }

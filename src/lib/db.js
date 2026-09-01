@@ -1,5 +1,6 @@
 // Lapisan data utama. Pilih backend Supabase jika env ada, jika tidak localStorage (demo mode).
 import { todayISO } from './format'
+import { statusOptionsFor } from './docTypes'
 import * as local from './db.local'
 
 export { computeTotals } from './calc'
@@ -82,7 +83,7 @@ export function emptyDocument(typeId = 'quote') {
     id: null,
     doc_type: typeId,
     doc_number: '',
-    status: 'Draft',
+    status: statusOptionsFor(typeId)[0],
     issue_date: todayISO(),
     due_date: '',
     customer_id: null,

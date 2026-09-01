@@ -10,6 +10,23 @@ const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', '
 const YEAR_NOW = new Date().getFullYear()
 const YEARS = Array.from({ length: YEAR_NOW - 2019 + 1 }, (_, i) => YEAR_NOW - i)
 
+// Menu "Mula Baharu" — keluar bila FAB biru diklik (ikut photo rujukan)
+const ADD_TILES = [
+  { label: 'New Invoice', code: 'INV', color: '#1E88E5', go: (n) => n('/new?type=invoice') },
+  { label: 'New Tax Invoice', code: 'TINV', color: '#3F51B5', go: (n) => n('/new?type=tax_invoice') },
+  { label: 'New Receipt', code: 'RCP', color: '#26A69A', go: (n) => n('/new?type=receipt') },
+  { label: 'New EQ', code: 'E/Q', color: '#F9A825', go: (n) => n('/new?type=quote') },
+  { label: 'New Purchase Order', code: 'PO', color: '#26C6DA', go: (n) => n('/new?type=purchase_order') },
+  { label: 'New Delivery Note', code: 'DN', color: '#9CCC65', go: (n) => n('/new?type=delivery_note') },
+  { label: 'New Client/Vendor', code: 'C/V', color: '#EC407A', go: (n) => n('/customers') },
+  { label: 'New Product', code: 'PRD', color: '#8D6E63', go: (n) => n('/settings') },
+  { label: 'New Company', code: 'CO', color: '#5C6BC0', go: (n) => n('/settings') },
+  { label: 'New User', code: 'USR', color: '#7E57C2', adminOnly: true, go: (n) => n('/admin') },
+  { label: 'New Bill/Purchase', code: 'B/P', color: '#95A5A6', disabled: true },
+  { label: 'New Expense', code: 'EXP', color: '#95A5A6', disabled: true },
+  { label: 'New Tax', code: 'TAX', color: '#95A5A6', disabled: true },
+]
+
 function sumOf(docs, types) {
   return docs.filter((d) => types.includes(d.doc_type)).reduce((s, d) => s + Number(d.total || 0), 0)
 }
@@ -35,6 +52,7 @@ export default function Dashboard() {
   const [search, setSearch] = useState('')
   const [showArchived, setShowArchived] = useState(false)
   const [year, setYear] = useState(YEAR_NOW)
+  const [showAdd, setShowAdd] = useState(false)
   const [customers, setCustomers] = useState([])
   const [savedItems, setSavedItems] = useState([])
   const [hasCompany, setHasCompany] = useState(false)
@@ -319,7 +337,35 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <button className="fab-blue" onClick={() => navigate('/new')} title="New Document">＋</button>
+      <button className="fab-blue" onClick={() => setShowAdd(true)} title="Tambah baharu">＋</button>
+
+      {showAdd && (
+        <div className="add-overlay" onClick={() => setShowAdd(false)}>
+          <div className="add-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="add-head">
+              <span>Mula Baharu</span>
+              <button onClick={() => setShowAdd(false)} aria-label="tutup">✕</button>
+            </div>
+            <div className="add-grid">
+              {ADD_TILES.map((t) => {
+                const locked = t.disabled || (t.adminOnly && role !== 'admin')
+                return (
+                  <button
+                    key={t.label}
+                    className={'add-tile' + (locked ? ' locked' : '')}
+                    title={locked ? (t.disabled ? 'Akan datang' : 'Admin sahaja') : t.label}
+                    disabled={locked}
+                    onClick={() => { setShowAdd(false); t.go(navigate) }}
+                  >
+                    <span className="add-ico" style={{ background: t.color }}>{t.code}</span>
+                    <span className="add-label">{t.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
