@@ -44,7 +44,27 @@ export default function PrintView() {
 
   // Jana blob PDF (A4, multi-page) daripada paparan cetak — useCORS supaya
   // imej Cloudinary (logo/cop/signature) turut dirender dalam PDF.
+  // Jika chunk lama hilang selepas deploy baharu, muat semula halaman sekali
+  // secara automatik supaya browser ambil bundel terkini.
   async function generateBlob() {
+    try {
+      return await generateBlobInner()
+    } catch (e) {
+      const msg = String(e?.message || e)
+      if (
+        !sessionStorage.getItem('pwa_chunk_reload') &&
+        /dynamically imported module|Failed to fetch|Loading chunk/i.test(msg)
+      ) {
+        sessionStorage.setItem('pwa_chunk_reload', '1')
+        window.location.reload()
+        return null
+      }
+      sessionStorage.removeItem('pwa_chunk_reload')
+      throw e
+    }
+  }
+
+  async function generateBlobInner() {
     const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
       import('html2canvas'),
       import('jspdf'),
@@ -78,6 +98,7 @@ export default function PrintView() {
     setSaveMsg('')
     try {
       const blob = pdfBlob || (await generateBlob())
+      if (!blob) return
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -97,6 +118,7 @@ export default function PrintView() {
     setSaveMsg('')
     try {
       const blob = pdfBlob || (await generateBlob())
+      if (!blob) return
       const file = new File([blob], fileName, { type: 'application/pdf' })
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
@@ -123,6 +145,7 @@ export default function PrintView() {
     setSaveMsg('Sedang jana PDF…')
     try {
       const blob = await generateBlob()
+      if (!blob) return
       setSaveMsg('Sedang upload ke Cloudinary…')
       const res = await uploadPdf(blob, fileName)
       await api.setPdfUrl(doc.id, res.secure_url)
