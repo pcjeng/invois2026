@@ -29,9 +29,15 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        navigateFallback: 'index.html',
+        globPatterns: ['**/*.{js,css,svg,png,ico,woff2}'],
+        // index.html TIDAK di-precache — navigasi guna NetworkFirst supaya
+        // browser sentiasa dapat versi TERKINI selepas deploy (elak skrin putih)
         runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: { cacheName: 'html-navigate', networkTimeoutSeconds: 3 },
+          },
           {
             // imej Cloudinary (logo/signature/PDF) — URL tak berubah, cache dulu
             urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
