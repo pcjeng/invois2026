@@ -48,6 +48,9 @@ export async function signIn(email, password) {
 export async function signUp(email, password) {
   return (await getBackend()).signUp(email, password)
 }
+export async function signInWithGoogle() {
+  return (await getBackend()).signInWithGoogle()
+}
 export async function sendPasswordReset(email) {
   return (await getBackend()).sendPasswordReset(email)
 }

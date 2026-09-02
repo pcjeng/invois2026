@@ -191,6 +191,7 @@ export async function getMyRole() { return 'user' }
 export async function adminListUsers() { throw new Error('Admin hanya tersedia dalam mod Supabase') }
 export async function adminSetRole() { throw new Error('Admin hanya tersedia dalam mod Supabase') }
 export async function adminSetBanned() { throw new Error('Admin hanya tersedia dalam mod Supabase') }
+export async function signInWithGoogle() { throw new Error('Google login hanya dalam mod Supabase') }
 
 // ---------- Payments (demo mode) ----------
 export async function listPayments(documentId) {

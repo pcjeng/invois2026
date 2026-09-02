@@ -109,6 +109,10 @@ export default function AuthGate({ children }) {
                 : 'Hantar Email Reset'}
         </button>
 
+        <button className="btn google-btn" type="button" onClick={handleGoogle} disabled={busy}>
+          <span className="g-icon">G</span> Log masuk dengan Google
+        </button>
+
         <div className="login-links">
           {mode === 'login' && (
             <>

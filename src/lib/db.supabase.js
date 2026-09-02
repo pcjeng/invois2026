@@ -6,7 +6,15 @@ import { todayISO } from './format'
 
 const client = createClient(
   import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      flowType: 'pkce',
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  }
 )
 
 function num(v) {
@@ -37,6 +45,15 @@ export async function signUp(email, password) {
   const { data, error } = await client.auth.signUp({ email, password })
   if (error) throw error
   return { needsEmailConfirm: !data.session }
+}
+
+// Log masuk / daftar dengan Google (OAuth) — redirect balik ke laman semasa
+export async function signInWithGoogle() {
+  const { error } = await client.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
+  })
+  if (error) throw error
 }
 
 export async function sendPasswordReset(email) {

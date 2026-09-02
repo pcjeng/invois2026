@@ -411,6 +411,26 @@ input, select, textarea { font-family: inherit; font-size: 15px; color: var(--te
 .login-card .btn { width: 100%; margin-top: 16px; padding: 12px; font-size: 15px; }
 .login-err { background: #FFEBEE; color: #B71C1C; border-radius: 8px; padding: 8px 10px; font-size: 13px; margin-top: 10px; }
 .login-note { color: var(--muted); font-size: 12px; text-align: center; margin: 14px 0 0; }
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; background: #fff; border: 1px solid var(--line);
+  border-radius: 10px; padding: 11px; font-size: 14px; font-weight: 600;
+  cursor: pointer; margin-bottom: 4px;
+}
+.google-btn:hover { border-color: #00AEEF; }
+.google-btn .g-icon {
+  font-weight: 800; font-size: 16px; color: #4285F4;
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 1.5px solid #4285F4; display: inline-flex;
+  align-items: center; justify-content: center;
+}
+.login-divider {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--muted); font-size: 12px; margin: 14px 0 6px;
+}
+.login-divider::before, .login-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--line);
+}
 .login-info { background: #E8F5E9; color: #2E7D32; border-radius: 8px; padding: 8px 10px; font-size: 13px; margin-top: 10px; }
 .login-links { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
 .linklike { background: none; border: none; color: var(--navy); font-size: 13px; cursor: pointer; padding: 0; }
