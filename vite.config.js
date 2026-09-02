@@ -29,7 +29,9 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,svg,png,ico,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        navigateFallback: 'index.html',
+        cleanupOutdatedCaches: true,
         // index.html TIDAK di-precache — navigasi guna NetworkFirst supaya
         // browser sentiasa dapat versi TERKINI selepas deploy (elak skrin putih)
         runtimeCaching: [

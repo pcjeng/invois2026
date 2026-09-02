@@ -35,6 +35,18 @@ export default function AuthGate({ children }) {
     setPassword('')
   }
 
+  async function handleGoogle() {
+    setBusy(true)
+    setErr('')
+    try {
+      await api.signInWithGoogle()
+      // halaman akan redirect ke Google — tiada langkah seterusnya di sini
+    } catch (ex) {
+      setErr('Gagal: ' + (ex?.message || ex))
+      setBusy(false)
+    }
+  }
+
   async function submit(e) {
     e.preventDefault()
     setBusy(true)
