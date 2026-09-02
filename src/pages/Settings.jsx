@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import * as api from '../lib/db'
+import { usingSupabase } from '../lib/db'
 import { uploadImage, isConfigured as cloudinaryReady } from '../lib/cloudinary'
-import { fmtMoney } from '../lib/format'
+import { fmtMoney, todayISO } from '../lib/format'
 
 const EMPTY_PROFILE = { name: '', address: '', phone: '', email: '', logo_url: '', signature_url: '', default_tax_rate: 0 }
 const EMPTY_ITEM = { description: '', unit: '', unit_price: 0 }
@@ -18,6 +19,7 @@ export default function Settings() {
   const [uploadMsg, setUploadMsg] = useState('')
   const [pwForm, setPwForm] = useState({ a: '', b: '' })
   const [pwMsg, setPwMsg] = useState('')
+  const [backupMsg, setBackupMsg] = useState('')
   const logoFileRef = useRef(null)
   const sigFileRef = useRef(null)
   const stampFileRef = useRef(null)
@@ -90,6 +92,43 @@ export default function Settings() {
     } catch (ex) {
       setPwMsg('Gagal: ' + (ex?.message || ex))
     }
+  }
+
+  // ---------- Backup & Data ----------
+  async function exportBackupFile() {
+    setBackupMsg('Menyediakan backup…')
+    try {
+      const data = await api.exportBackup()
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `PcJeng-backup-${todayISO()}.json`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 3000)
+      setBackupMsg('✓ Backup diexport — simpan fail JSON ini di tempat selamat.')
+    } catch (ex) {
+      setBackupMsg('Gagal: ' + (ex?.message || ex))
+    }
+  }
+
+  async function importBackupFile(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBackupMsg('Memulihkan backup…')
+    try {
+      const json = JSON.parse(await file.text())
+      await api.importBackup(json)
+      const p = await api.getProfile()
+      if (p) setProfile({ ...EMPTY_PROFILE, ...p })
+      loadItems()
+      setBackupMsg('✓ Backup dipulihkan — data dikemas kini.')
+    } catch (ex) {
+      setBackupMsg('Gagal: ' + (ex?.message || ex))
+    }
+    e.target.value = ''
   }
 
   return (
@@ -193,6 +232,39 @@ export default function Settings() {
             </div>
           </div>
         </form>
+      </div>
+
+      <div className="section-h">Backup & Data</div>
+      <div className="card">
+        <div className="row col">
+          <div className="backup-row">
+            <div>
+              <b>Backup automatik ke Cloud</b>
+              <div className="upload-hint">
+                Data (dokumen, customer, produk, bayaran) diselaraskan dengan Supabase.
+                Hilang / rosak phone? Log masuk dengan email &amp; kata laluan yang sama
+                di mana-mana peranti — semua data keluar semula.
+              </div>
+            </div>
+            <label className="switch">
+              <input type="checkbox" checked={usingSupabase} disabled readOnly />
+              <span className="slider" />
+            </label>
+          </div>
+          {!usingSupabase && (
+            <span className="upload-hint">
+              Demo mode — aktifkan Supabase (fail .env) untuk backup cloud.
+            </span>
+          )}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            <button className="btn primary" type="button" onClick={exportBackupFile}>⬇️ Export Backup</button>
+            <label className="btn" style={{ cursor: 'pointer' }}>
+              ⬆️ Import Backup
+              <input type="file" accept="application/json,.json" hidden onChange={importBackupFile} />
+            </label>
+          </div>
+          {backupMsg && <span className={backupMsg.startsWith('✓') ? 'upload-ok' : 'alert'} style={{ display: 'inline-block' }}>{backupMsg}</span>}
+        </div>
       </div>
 
       <div className="section-h">Saved Items (katalog produk)</div>

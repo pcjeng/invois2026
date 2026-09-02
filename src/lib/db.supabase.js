@@ -351,3 +351,90 @@ export async function deletePayment(id) {
   const { error } = await client.from('payments').delete().eq('id', id)
   if (error) throw error
 }
+
+// ---------- Backup & Restore ----------
+// Export semua data milik pengguna semasa (untuk fail JSON)
+export async function exportBackup() {
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
+  const prof = await getProfile()
+  const { data: customers } = await client.from('customers').select('*').eq('user_id', u)
+  const { data: savedItems } = await client.from('saved_items').select('*').eq('user_id', u)
+  const { data: docs } = await client.from('documents').select('*').eq('user_id', u)
+  const { data: items } = await client.from('document_items').select('*').eq('user_id', u)
+  const { data: pays } = await client.from('payments').select('*').eq('user_id', u)
+  return {
+    version: 1,
+    app: 'PcJeng Invoices',
+    exported_at: new Date().toISOString(),
+    profile: prof || null,
+    customers: customers || [],
+    saved_items: savedItems || [],
+    documents: docs || [],
+    document_items: items || [],
+    payments: pays || [],
+  }
+}
+
+// Pulihkan data daripada fail backup (merge/upsert mengikut id)
+export async function importBackup(data) {
+  const u = await uid()
+  if (!u) throw new Error('Belum log masuk')
+  if (!data || typeof data !== 'object' || !Array.isArray(data.documents)) {
+    throw new Error('Fail backup tidak sah')
+  }
+  if (Array.isArray(data.customers) && data.customers.length) {
+    const { error } = await client
+      .from('customers')
+      .upsert(data.customers.map((c) => ({ ...c, user_id: u })), { onConflict: 'id' })
+    if (error) throw error
+  }
+  if (Array.isArray(data.saved_items) && data.saved_items.length) {
+    const { error } = await client
+      .from('saved_items')
+      .upsert(data.saved_items.map((s) => ({ ...s, user_id: u })), { onConflict: 'id' })
+    if (error) throw error
+  }
+  if (Array.isArray(data.documents) && data.documents.length) {
+    const { error } = await client
+      .from('documents')
+      .upsert(data.documents.map((d) => ({ ...d, user_id: u })), { onConflict: 'id' })
+    if (error) throw error
+  }
+  if (Array.isArray(data.document_items) && data.document_items.length) {
+    const { error } = await client
+      .from('document_items')
+      .upsert(data.document_items.map((it) => ({ ...it, user_id: u })), { onConflict: 'id' })
+    if (error) throw error
+  }
+  if (Array.isArray(data.payments) && data.payments.length) {
+    const { error } = await client
+      .from('payments')
+      .upsert(data.payments.map((p) => ({ ...p, user_id: u })), { onConflict: 'id' })
+    if (error) throw error
+  }
+  // Profil syarikat: kemas kini baris sedia ada, atau cipta baru
+  const prof = data.profile
+  if (prof && typeof prof === 'object') {
+    const fields = {
+      name: prof.name || '',
+      address: prof.address || '',
+      phone: prof.phone || '',
+      email: prof.email || '',
+      logo_url: prof.logo_url || '',
+      signature_url: prof.signature_url || '',
+      stamp_url: prof.stamp_url || '',
+      default_tax_rate: num(prof.default_tax_rate),
+      updated_at: new Date().toISOString(),
+    }
+    const existing = await getProfile()
+    if (existing) {
+      const { error } = await client.from('company_profile').update(fields).eq('id', existing.id)
+      if (error) throw error
+    } else {
+      const { error } = await client.from('company_profile').insert({ ...fields, user_id: u })
+      if (error) throw error
+    }
+  }
+  return true
+}

@@ -206,3 +206,38 @@ export async function addPayment(p) {
 export async function deletePayment(id) {
   write(KEYS.payments, read(KEYS.payments, []).filter((x) => x.id !== id))
 }
+
+// ---------- Backup & Restore (demo mode: fail JSON tempatan) ----------
+export async function exportBackup() {
+  return {
+    version: 1,
+    app: 'PcJeng Invoices',
+    exported_at: new Date().toISOString(),
+    profile: read(KEYS.profile, null),
+    customers: read(KEYS.customers, []),
+    saved_items: read(KEYS.saved, []),
+    documents: read(KEYS.docs, []).map((d) => {
+      const { items, ...rest } = d
+      return { ...rest, document_items: items || [] }
+    }),
+    payments: read(KEYS.payments, []),
+  }
+}
+
+export async function importBackup(data) {
+  if (!data || typeof data !== 'object' || !Array.isArray(data.documents)) {
+    throw new Error('Fail backup tidak sah')
+  }
+  if (Array.isArray(data.profile)) return
+  if (data.profile && typeof data.profile === 'object') write(KEYS.profile, data.profile)
+  if (Array.isArray(data.customers)) write(KEYS.customers, data.customers)
+  if (Array.isArray(data.saved_items)) write(KEYS.saved, data.saved_items)
+  if (Array.isArray(data.documents)) {
+    write(KEYS.docs, data.documents.map((d) => {
+      const { document_items, ...rest } = d
+      return { ...rest, items: document_items || [] }
+    }))
+  }
+  if (Array.isArray(data.payments)) write(KEYS.payments, data.payments)
+  return true
+}

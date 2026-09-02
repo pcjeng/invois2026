@@ -89,6 +89,14 @@ export async function deletePayment(id) {
   return (await getBackend()).deletePayment(id)
 }
 
+// ---------- Backup & Restore ----------
+export async function exportBackup() {
+  return (await getBackend()).exportBackup()
+}
+export async function importBackup(data) {
+  return (await getBackend()).importBackup(data)
+}
+
 export function emptyDocument(typeId = 'quote') {
   return {
     id: null,
